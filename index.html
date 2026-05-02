@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>SSS Education 自習室システム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    :root {
+      --gold: #d3ad4f;
+      --black: #000000;
+      --dark-gray: #111111;
+      --white: #ffffff;
+      --text-gray: #a0a0a0;
+    }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background-color: var(--black);
+      color: var(--white);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* システム開始前のオーバーレイ */
+    #overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--black);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    #start-btn {
+      padding: 20px 40px;
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      font-size: 24px;
+      letter-spacing: 4px;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 600px;
+      padding: 50px 40px 40px; /* 上下左右の余白を調整 */
+      background: var(--dark-gray);
+      border: 1px solid rgba(211, 173, 79, 0.3);
+      position: relative;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    /* ★ ログイン成功時の視覚エフェクト ★ */
+    .container.success-glow {
+      animation: glow-pulse 1s ease-out forwards;
+      border-color: var(--gold);
+    }
+    @keyframes glow-pulse {
+      0% { box-shadow: 0 0 0 rgba(211, 173, 79, 0); transform: scale(1); }
+      20% { box-shadow: 0 0 60px rgba(211, 173, 79, 0.8); transform: scale(1.02); }
+      100% { box-shadow: 0 0 30px rgba(211, 173, 79, 0.3); transform: scale(1); }
+    }
+
+    /* 四隅の装飾（スクエア） */
+    .border-line {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-color: var(--gold);
+      border-style: solid;
+      transition: 0.3s ease;
+    }
+    .tl { top: 15px; left: 15px; border-width: 1px 0 0 1px; }
+    .tr { top: 15px; right: 15px; border-width: 1px 1px 0 0; }
+    .bl { bottom: 15px; left: 15px; border-width: 0 0 1px 1px; }
+    .br { bottom: 15px; right: 15px; border-width: 0 1px 1px 0; }
+
+    /* 成功時に四隅の枠も少し太くして目立たせる */
+    .container.success-glow .border-line {
+      width: 40px; height: 40px; border-width: 2px;
+    }
+
+    .logo {
+      font-size: 14px;
+      letter-spacing: 6px;
+      color: var(--gold);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: 30px;
+      margin: 10px 0;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
+    .sub-text {
+      font-size: 16px;
+      color: var(--white);
+      margin-bottom: 5px;
+    }
+
+    .instruction {
+      font-size: 14px;
+      color: var(--gold);
+      margin-bottom: 30px;
+    }
+
+    /* 入力エリア */
+    #scanInput {
+      width: 80%;
+      background: transparent;
+      border: 1px solid #333;
+      color: var(--white);
+      font-size: 24px;
+      padding: 15px;
+      text-align: center;
+      outline: none;
+    }
+    #scanInput:focus { border-color: var(--gold); }
+
+    /* 結果表示エリア */
+    #message-box {
+      margin-top: 30px;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .msg-main { font-size: 24px; font-weight: bold; letter-spacing: 1px; }
+    .msg-sub { font-size: 16px; margin-top: 10px; color: var(--gold); }
+
+    /* ローディング回転 */
+    .loader {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(211, 173, 79, 0.2);
+      border-top: 3px solid var(--gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* ★ 時計・日付エリア（枠内に収めるための調整） ★ */
+    #datetime-display {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px dashed rgba(211, 173, 79, 0.3); /* 時計エリアとの境界線 */
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    #date-text {
+      font-size: 14px;
+      color: var(--text-gray);
+      margin-bottom: 5px;
+    }
+    #time-text {
+      font-size: 36px;
+      font-weight: bold;
+      color: var(--white);
+      text-shadow: 0 0 15px rgba(255,255,255,0.2);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="overlay" onclick="startSystem()">
+    <div id="start-btn">TAP TO START</div>
+  </div>
+
+  <div class="container" id="main-container">
+    <div class="border-line tl"></div>
+    <div class="border-line tr"></div>
+    <div class="border-line bl"></div>
+    <div class="border-line br"></div>
+
+    <div class="logo">SSS Education</div>
+    <h1>SSS Education自習室</h1>
+    <p class="sub-text">バーコードをスキャンしてください</p>
+    <p class="instruction">指定のQRコードを一度かざしてください</p>
+
+    <input type="text" id="scanInput" placeholder="READY" spellcheck="false" autocapitalize="none" inputmode="email" autocomplete="off">
+
+    <div id="message-box">
+      <div id="msg-main" class="msg-main"></div>
+      <div id="msg-sub" class="msg-sub"></div>
+    </div>
+
+    <div id="datetime-display">
+      <div id="date-text">----.--.-- (---)</div>
+      <div id="time-text">--:--:--</div>
+    </div>
+  </div>
+
+<script>
+  const input = document.getElementById('scanInput');
+  const msgMain = document.getElementById('msg-main');
+  const msgSub = document.getElementById('msg-sub');
+  const overlay = document.getElementById('overlay');
+  const container = document.getElementById('main-container');
+
+  // システム開始処理
+  function startSystem() {
+    overlay.style.display = 'none';
+    input.focus();
+  }
+
+  // 常にフォーカスを維持する（iPad対策）
+  document.addEventListener('touchstart', () => {
+    if (overlay.style.display === 'none') input.focus();
+  });
+  
+  // 入力監視：全角が混じったら即座に消去
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^\x20-\x7E]/g, '');
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const id = input.value.trim();
+      if (!id) return;
+      executeScan(id);
+    }
+  });
+
+  function executeScan(id) {
+    input.disabled = true;
+    msgMain.innerHTML = '<div class="loader"></div>';
+    msgSub.innerText = 'AUTHENTICATING...';
+
+    const timeout = setTimeout(() => {
+      resetUI("通信タイムアウト", "もう一度試してください");
+    }, 10000);
+
+    // ★GAS環境でテストしていない時のエラーを防ぐためのおまじない★
+    if (typeof google === 'undefined') {
+      return; 
+    }
+
+    google.script.run
+      .withSuccessHandler(function(response) {
+        clearTimeout(timeout);
+        
+        // ★ 成功時の視覚エフェクト追加 ★
+        container.classList.add('success-glow');
+        msgMain.style.color = 'var(--gold)';
+        msgMain.innerHTML = '✓ ACCESS GRANTED'; // チェックマークを追加
+        msgSub.innerText = response;
+        
+        setTimeout(resetUI, 4000);
+      })
+      .withFailureHandler(function(err) {
+        clearTimeout(timeout);
+        msgMain.style.color = '#ff4d4d';
+        msgMain.innerText = 'SYSTEM ERROR';
+        msgSub.innerText = '管理者へ連絡してください';
+        setTimeout(resetUI, 4000);
+      })
+      .processScan(id);
+  }
+
+  function resetUI(mainText = "", subText = "") {
+    input.disabled = false;
+    input.value = '';
+    msgMain.style.color = 'var(--white)';
+    msgMain.innerText = mainText;
+    msgSub.innerText = subText;
+    
+    // ★ エフェクトを解除 ★
+    container.classList.remove('success-glow');
+    
+    input.focus();
+  }
+
+  setInterval(() => {
+    if (!input.disabled && document.activeElement !== input) {
+      input.focus();
+    }
+  }, 1000);
+
+  // ★ 時計の更新処理 ★
+  function updateClock() {
+    const now = new Date();
+    const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    const day = days[now.getDay()];
+
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+
+    document.getElementById('date-text').innerText = `${y}.${m}.${d} (${day})`;
+    document.getElementById('time-text').innerText = `${hh}:${mm}:${ss}`;
+  }
+  
+  // 時計を1秒ごとに動かす
+  setInterval(updateClock, 1000);
+  updateClock(); // 読み込み時すぐに1回実行
+
+</script>
+</body>
+</html>

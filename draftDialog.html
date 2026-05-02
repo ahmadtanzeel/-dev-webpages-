@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { 
+      font-family: 'Helvetica Neue', Arial, sans-serif; 
+      padding: 20px; 
+      background-color: #1a1a1a; 
+      color: #fff; 
+      margin: 0;
+    }
+    p { font-size: 13px; color: #ccc; margin-top: 0; margin-bottom: 10px; }
+    
+    /* 入力エリア */
+    textarea { 
+      width: 100%; height: 80px; box-sizing: border-box; 
+      background: #000; border: 1px solid #d3ad4f; color: #fff; 
+      padding: 10px; font-size: 16px; resize: none; margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+    textarea:focus { outline: none; box-shadow: 0 0 8px rgba(211, 173, 79, 0.5); }
+    
+    /* ボタンエリア */
+    .btn-container { text-align: right; }
+    button { 
+      background: transparent; border: 1px solid #d3ad4f; color: #d3ad4f; 
+      padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold;
+      transition: 0.2s;
+    }
+    button:hover { background: #d3ad4f; color: #000; }
+    button:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; }
+    
+    /* 結果表示エリア */
+    #msg { 
+      font-size: 13px; margin-top: 15px; white-space: pre-wrap; 
+      color: #a0a0a0; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  
+  <p>学習者IDを入力してください<br>（複数ある場合はカンマ「,」で区切る）</p>
+  <textarea id="idInput" placeholder="例: 1001, 1002, 1003"></textarea>
+  
+  <div class="btn-container">
+    <button id="runBtn" onclick="runProcess()">下書きを作成する</button>
+  </div>
+  
+  <div id="msg"></div>
+
+  <script>
+    function runProcess() {
+      const ids = document.getElementById('idInput').value;
+      const btn = document.getElementById('runBtn');
+      const msgDiv = document.getElementById('msg');
+      
+      if (!ids.trim()) {
+        msgDiv.innerText = "⚠ IDを入力してください。";
+        msgDiv.style.color = "#ff4d4d";
+        return;
+      }
+      
+      // 処理中はボタンを押せなくする
+      btn.disabled = true;
+      btn.innerText = "作成中...";
+      msgDiv.innerText = "";
+      msgDiv.style.color = "#a0a0a0";
+      
+      // サーバー側の関数（createDraftsByIds）を呼び出す
+      google.script.run
+        .withSuccessHandler(function(res) {
+          msgDiv.innerText = res.message;
+          if (res.success) {
+            msgDiv.style.color = "#d3ad4f";
+            document.getElementById('idInput').value = ""; // 成功したら入力欄を空にする
+          } else {
+            msgDiv.style.color = "#ff4d4d";
+          }
+          btn.disabled = false;
+          btn.innerText = "下書きを作成する";
+        })
+        .withFailureHandler(function(err) {
+          msgDiv.innerText = "⚠ エラーが発生しました: " + err.message;
+          msgDiv.style.color = "#ff4d4d";
+          btn.disabled = false;
+          btn.innerText = "下書きを作成する";
+        })
+        .createDraftsByIds(ids);
+    }
+  </script>
+</body>
+</html>
