@@ -1,9 +1,5 @@
 // ====================================================================
 // 【列構成 最新版】インデックス定義（個人情報・公開プロフィール共通）
-// A列:ID, B列:氏名, C列:ニックネーム, D列:目標時間, E列:URL, F列:トークン, G列:模試名, H列:模試日
-// ====================================================================
-// ====================================================================
-// 【列構成 最新版】インデックス定義（個人情報・公開プロフィール共通）
 // A列:ID, B列:氏名, C列:ニックネーム, D列:目標時間, E列:URLトークン, F列:模試名, G列:模試日
 // ====================================================================
 const IDX_PROFILE = {
@@ -11,15 +7,12 @@ const IDX_PROFILE = {
   NAME: 1,        // B列: 学習者氏名（実名）
   NICKNAME: 2,    // C列: ニックネーム
   GOAL_HOURS: 3,  // D列: 目標勉強時間
-  TOKEN: 4,       // E列: URLトークン ★ここを4に修正！
-  EXAM_NAME: 5,   // F列: 目標模試名  ★上に詰める
-  EXAM_DATE: 6    // G列: 模試日付    ★上に詰める
+  TOKEN: 4,       // E列: URLトークン
+  EXAM_NAME: 5,   // F列: 目標模試名
+  EXAM_DATE: 6    // G列: 模試日付
 };
 const IDX_PERSONAL = IDX_PROFILE;
 
-// ====================================================================
-// ① アクセス振り分け処理（Webアプリの入り口・必須！）
-// ====================================================================
 // ====================================================================
 // ① アクセス振り分け処理（API化対応版）
 // ====================================================================
@@ -72,11 +65,11 @@ function jsonResponse(obj) {
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
 // ====================================================================
 // ② ダッシュボード用データ集計（実名対応・最適化版）
 // ====================================================================
 function getStudentStats(studentToken) {
-  // ★ キャッシュ確認（あれば爆速表示）
   const cache = CacheService.getScriptCache();
   const cachedData = cache.get(studentToken);
   if (cachedData) return JSON.parse(cachedData);
@@ -96,12 +89,10 @@ function getStudentStats(studentToken) {
   let customExam = { name: "", date: "" }; 
   let nickMap = {};
 
-  // プロフィールから情報を抽出（実名を取得）
   for (let i = 1; i < profileData.length; i++) {
     let pId = String(profileData[i][IDX_PROFILE.ID]).trim();
     let pToken = String(profileData[i][IDX_PROFILE.TOKEN]).trim();
     
-    // ★ B列の実名を取得（空欄ならC列のニックネーム、それもなければIDを表示）
     let pName = profileData[i][IDX_PROFILE.NAME] || profileData[i][IDX_PROFILE.NICKNAME] || pId;
     nickMap[pId] = pName; 
 
@@ -115,7 +106,6 @@ function getStudentStats(studentToken) {
 
   if (!targetId) throw new Error("無効なURLです。管理者に連絡してください。");
 
-  // 生徒設定（模試など）の取得
   for (let i = 1; i < settingsData.length; i++) {
     if (String(settingsData[i][0]).trim() === targetId) {
       customExam.name = settingsData[i][1];
@@ -181,7 +171,7 @@ function getStudentStats(studentToken) {
           });
         }
         if (logDateMs === todayStart) {
-          todayCheers += parseInt(logData[i][5] || 0); // F列(6列目)の応援数を取得
+          todayCheers += parseInt(logData[i][5] || 0); 
         }
       }
       
@@ -192,7 +182,7 @@ function getStudentStats(studentToken) {
       if(recentActions.length < 5) {
         recentActions.push({
           id: rowId,
-          name: nickMap[rowId] || "学習者", // ★実名が表示される
+          name: nickMap[rowId] || "学習者", 
           action: (outTime) ? "退室" : "入室",
           time: Utilities.formatDate((outTime ? outTime : inTime), "JST", "HH:mm")
         });
@@ -251,9 +241,7 @@ function getStudentStats(studentToken) {
     tests: testProgress,
     exam: customExam,
     cheers: todayCheers
-    
   };
-  
 
   cache.put(studentToken, JSON.stringify(resultData), 900); // 15分間キャッシュ
   return resultData;
@@ -272,7 +260,7 @@ function sendCheer(targetStudentId) {
   for (let i = data.length - 1; i >= 1; i--) {
     const rowDateStr = data[i][0] instanceof Date ? Utilities.formatDate(data[i][0], "JST", "yyyy/MM/dd") : "";
     if (String(data[i][1]).trim() === targetStudentId && rowDateStr === todayStr) {
-      const currentCheer = parseInt(data[i][5] || 0); // F列
+      const currentCheer = parseInt(data[i][5] || 0); 
       sheet.getRange(i + 1, 6).setValue(currentCheer + 1);
       return "応援を届けました！";
     }
@@ -313,7 +301,7 @@ function saveStudentSettings(token, examName, examDate) {
   settingsSheet.getRange(targetRow, 2).setValue(examName);
   settingsSheet.getRange(targetRow, 3).setValue(examDate);
   
-  CacheService.getScriptCache().remove(token); // 設定を変えたらキャッシュを破棄
+  CacheService.getScriptCache().remove(token); 
   
   return "設定を保存しました！";
 }
