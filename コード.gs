@@ -236,6 +236,7 @@ function getStudentStats(studentToken) {
 
   const resultData = {
     name: targetNickname,
+    id: targetId, 
     today: formatTime(todayMs),
     week: formatTime(weekMs),
     total: formatTime(totalMs),
@@ -250,7 +251,9 @@ function getStudentStats(studentToken) {
     tests: testProgress,
     exam: customExam,
     cheers: todayCheers
+    
   };
+  
 
   cache.put(studentToken, JSON.stringify(resultData), 900); // 15分間キャッシュ
   return resultData;
