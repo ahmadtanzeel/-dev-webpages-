@@ -371,6 +371,9 @@
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     /* ===== QRコード ===== */
+    /* QRボックスはスクロールアニメーション対象外（常に表示） */
+    #box-qr { opacity: 1 !important; transform: none !important; }
+
     .qr-content {
       display: flex;
       flex-direction: column;
@@ -928,13 +931,16 @@
       const canvas = document.getElementById('qr-canvas');
       if (!canvas || typeof QRCode === 'undefined' || !studentId) return;
 
-      QRCode.toCanvas(canvas, String(studentId), {
-        width: 220,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' },
-        errorCorrectionLevel: 'M'
-      }, (err) => {
-        if (err) console.error('QR生成エラー:', err);
+      // レイアウト確定を待ってから描画（描画タイミングのブレを防ぐ）
+      requestAnimationFrame(() => {
+        QRCode.toCanvas(canvas, String(studentId), {
+          width: 220,
+          margin: 1,
+          color: { dark: '#000000', light: '#ffffff' },
+          errorCorrectionLevel: 'M'
+        }, (err) => {
+          if (err) console.error('QR生成エラー:', err);
+        });
       });
     }
 
