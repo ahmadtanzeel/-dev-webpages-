@@ -898,7 +898,7 @@
     }
 
     // =====================================================================
-    // QRコード描画
+    // QRコード描画（localStorageキャッシュ対応で高速化）
     // =====================================================================
 
     // 最後に取得したID（details開閉時の再描画用）
@@ -909,11 +909,6 @@
 
       if (!studentId) {
         if (idText) idText.textContent = '取得できませんでした';
-        return;
-      }
-      if (typeof QRCode === 'undefined') {
-        console.warn('QRCodeライブラリが読み込まれていません');
-        if (idText) idText.textContent = String(studentId);
         return;
       }
 
@@ -929,9 +924,31 @@
 
     function drawQRCanvas(studentId) {
       const canvas = document.getElementById('qr-canvas');
-      if (!canvas || typeof QRCode === 'undefined' || !studentId) return;
+      if (!canvas || !studentId) return;
 
-      // レイアウト確定を待ってから描画（描画タイミングのブレを防ぐ）
+      // ★ localStorageに保存済みのDataURLがあればそれを使う（QR再生成ゼロ）
+      const cacheKey = 'qr_cache_' + studentId;
+      const cachedDataURL = localStorage.getItem(cacheKey);
+
+      if (cachedDataURL) {
+        // キャッシュから即復元（計算ゼロ・約1ms）
+        const img = new Image();
+        img.onload = function() {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = cachedDataURL;
+        return;
+      }
+
+      // 初回のみライブラリで生成し、生成結果をlocalStorageに保存
+      if (typeof QRCode === 'undefined') {
+        console.warn('QRCodeライブラリが読み込まれていません');
+        return;
+      }
+
       requestAnimationFrame(() => {
         QRCode.toCanvas(canvas, String(studentId), {
           width: 220,
@@ -939,12 +956,23 @@
           color: { dark: '#000000', light: '#ffffff' },
           errorCorrectionLevel: 'M'
         }, (err) => {
-          if (err) console.error('QR生成エラー:', err);
+          if (err) {
+            console.error('QR生成エラー:', err);
+            return;
+          }
+          // 生成成功 → DataURLとしてキャッシュ
+          try {
+            const dataURL = canvas.toDataURL('image/png');
+            localStorage.setItem(cacheKey, dataURL);
+          } catch (e) {
+            // localStorage 容量超過などは無視
+            console.warn('QRキャッシュ保存失敗:', e);
+          }
         });
       });
     }
 
-    // アコーディオンが開かれるたびに再描画（閉じている間は描画されないため）
+    // アコーディオンが開かれるたびに再描画（キャッシュ経由なので高速）
     function setupQRToggle() {
       const qrDetails = document.getElementById('box-qr');
       if (!qrDetails) return;

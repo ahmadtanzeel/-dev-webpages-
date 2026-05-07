@@ -3,25 +3,31 @@
 // A列:ID, B列:氏名, C列:ニックネーム, D列:目標時間, E列:URLトークン, F列:模試名, G列:模試日
 // ====================================================================
 const IDX_PROFILE = {
-  ID: 0,          // A列: 学習者ID
-  NAME: 1,        // B列: 学習者氏名（実名）
-  NICKNAME: 2,    // C列: ニックネーム
-  GOAL_HOURS: 3,  // D列: 目標勉強時間
-  TOKEN: 4,       // E列: URLトークン
-  EXAM_NAME: 5,   // F列: 目標模試名
-  EXAM_DATE: 6    // G列: 模試日付
+  ID: 0, NAME: 1, NICKNAME: 2, GOAL_HOURS: 3,
+  TOKEN: 4, EXAM_NAME: 5, EXAM_DATE: 6
 };
 const IDX_PERSONAL = IDX_PROFILE;
 
 // ====================================================================
-// ① アクセス振り分け処理（API化対応版）
+// 管理シート（打刻ログ）の列インデックス
+// A列:日付 / B列:ID / D列:入室時刻 / E列:退室時刻 / F列:エール数
+// ====================================================================
+const IDX_LOG = {
+  DATE: 0,    // A列
+  ID: 1,      // B列
+  IN: 3,      // D列
+  OUT: 4,     // E列
+  CHEERS: 5   // F列
+};
+
+// ====================================================================
+// ① アクセス振り分け処理
 // ====================================================================
 function doGet(e) {
   const params = e.parameter || {};
   const action = params.action;
   const token  = params.token;
 
-  // --- API: 学習統計データ取得 ---
   if (action === 'stats' && token) {
     try {
       const data = getStudentStats(token);
@@ -31,15 +37,11 @@ function doGet(e) {
     }
   }
 
-  // --- 受付画面（index.html、トークンなし）：従来通り ---
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('SSS Education 自習室受付')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
 }
 
-// ====================================================================
-// ①-2 POSTリクエスト受け口（設定保存などの書き込み処理）
-// ====================================================================
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents || '{}');
@@ -49,8 +51,6 @@ function doPost(e) {
       const msg = saveStudentSettings(body.token, body.examName, body.examDate);
       return jsonResponse({ ok: true, message: msg });
     }
-
-    // ★ 以下を追加（受付QR打刻用）
     if (action === 'scan') {
       const msg = processScan(body.id);
       return jsonResponse({ ok: true, message: msg });
@@ -62,9 +62,6 @@ function doPost(e) {
   }
 }
 
-// ====================================================================
-// ①-3 JSONレスポンス共通ヘルパー
-// ====================================================================
 function jsonResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
@@ -72,7 +69,7 @@ function jsonResponse(obj) {
 }
 
 // ====================================================================
-// ② ダッシュボード用データ集計（実名対応・最適化版）
+// ② ダッシュボード用データ集計
 // ====================================================================
 function getStudentStats(studentToken) {
   const cache = CacheService.getScriptCache();
@@ -83,7 +80,7 @@ function getStudentStats(studentToken) {
   const profileSheet = ss.getSheetByName('公開プロフィール');
   const logSheet = ss.getSheetByName('管理シート');
   const settingsSheet = ss.getSheetByName('生徒設定') || ss.insertSheet('生徒設定');
-  
+
   const profileData = profileSheet.getDataRange().getValues();
   const logData = logSheet.getDataRange().getValues();
   const settingsData = settingsSheet.getDataRange().getValues();
@@ -91,15 +88,14 @@ function getStudentStats(studentToken) {
   let targetId = null;
   let targetNickname = "学習者";
   let weeklyGoalHours = 15;
-  let customExam = { name: "", date: "" }; 
+  let customExam = { name: "", date: "" };
   let nickMap = {};
 
   for (let i = 1; i < profileData.length; i++) {
     let pId = String(profileData[i][IDX_PROFILE.ID]).trim();
     let pToken = String(profileData[i][IDX_PROFILE.TOKEN]).trim();
-    
     let pName = profileData[i][IDX_PROFILE.NAME] || profileData[i][IDX_PROFILE.NICKNAME] || pId;
-    nickMap[pId] = pName; 
+    nickMap[pId] = pName;
 
     if (pToken === studentToken) {
       targetId = pId;
@@ -141,9 +137,9 @@ function getStudentStats(studentToken) {
   let uniqueDates = new Set();
 
   for(let i = logData.length - 1; i >= 1; i--){
-    let rowId = String(logData[i][1]).trim();
-    let inTime = toDate(logData[i][3]);  
-    let outTime = toDate(logData[i][4]); 
+    let rowId = String(logData[i][IDX_LOG.ID]).trim();
+    let inTime = toDate(logData[i][IDX_LOG.IN]);
+    let outTime = toDate(logData[i][IDX_LOG.OUT]);
 
     if(inTime) {
       let logDateMs = new Date(inTime.getFullYear(), inTime.getMonth(), inTime.getDate()).getTime();
@@ -155,10 +151,10 @@ function getStudentStats(studentToken) {
           totalMs += diffMs;
           if (logDateMs === todayStart) todayMs += diffMs;
           if (logDateMs >= (todayStart - 7*24*60*60*1000)) weekMs += diffMs;
-          
+
           let dayKey = Utilities.formatDate(inTime, "JST", "MM/dd");
           dailyMap[dayKey] = (dailyMap[dayKey] || 0) + diffMs;
-          
+
           let monday = getMonday(inTime);
           let weekKey = Utilities.formatDate(monday, "JST", "MM/dd") + "週";
           weeklyMap[weekKey] = (weeklyMap[weekKey] || 0) + diffMs;
@@ -167,7 +163,7 @@ function getStudentStats(studentToken) {
           monthlyMap[monthKey] = (monthlyMap[monthKey] || 0) + diffMs;
 
           uniqueDates.add(Utilities.formatDate(inTime, "JST", "yyyy/MM/dd"));
-          
+
           historyList.push({
             date: Utilities.formatDate(inTime, "JST", "MM/dd"),
             in: Utilities.formatDate(inTime, "JST", "HH:mm"),
@@ -176,18 +172,19 @@ function getStudentStats(studentToken) {
           });
         }
         if (logDateMs === todayStart) {
-          todayCheers += parseInt(logData[i][5] || 0); 
+          todayCheers += parseInt(logData[i][IDX_LOG.CHEERS] || 0);
         }
       }
-      
+
+      // 今週ランキング集計（全員、退室済みのみ）
       if(logDateMs >= thisMondayMs && diffMs > 0) {
         weeklyRankingMap[rowId] = (weeklyRankingMap[rowId] || 0) + diffMs;
       }
-      
+
       if(recentActions.length < 5) {
         recentActions.push({
           id: rowId,
-          name: nickMap[rowId] || "学習者", 
+          name: nickMap[rowId] || "学習者",
           action: (outTime) ? "退室" : "入室",
           time: Utilities.formatDate((outTime ? outTime : inTime), "JST", "HH:mm")
         });
@@ -195,11 +192,33 @@ function getStudentStats(studentToken) {
     }
   }
 
+  // ★ ランキング修正：未退室（diffMs=0）も「現在進行中の入室」として含めて、データがある人を全員カウント
+  // 上記のままだと「入室中だがまだ退室していない人」がランキングに入らないため
+  // 改善版：ranking用のmapに、退室時刻がない場合は入室時刻から現在時刻までを暫定加算
+  for(let i = logData.length - 1; i >= 1; i--){
+    let rowId = String(logData[i][IDX_LOG.ID]).trim();
+    let inTime = toDate(logData[i][IDX_LOG.IN]);
+    let outTime = toDate(logData[i][IDX_LOG.OUT]);
+    if (!inTime) continue;
+    let logDateMs = new Date(inTime.getFullYear(), inTime.getMonth(), inTime.getDate()).getTime();
+    if (logDateMs < thisMondayMs) break;  // 今週分のみで打ち切り（高速化）
+
+    if (!outTime) {
+      // 入室中：暫定で現在時刻までを加算
+      let liveMs = now.getTime() - inTime.getTime();
+      if (liveMs > 0 && liveMs < 12 * 3600000) {  // 12時間超は異常値とみなしスキップ
+        weeklyRankingMap[rowId] = (weeklyRankingMap[rowId] || 0) + liveMs;
+      }
+    }
+  }
+
   let top5Ranking = Object.keys(weeklyRankingMap).map(id => {
     return { name: nickMap[id] || "学習者", hours: (weeklyRankingMap[id] / 3600000).toFixed(1) };
-  }).sort((a, b) => b.hours - a.hours).slice(0, 5);
+  }).filter(r => parseFloat(r.hours) > 0)
+    .sort((a, b) => parseFloat(b.hours) - parseFloat(a.hours))
+    .slice(0, 5);
 
-  const TEST_SS_ID = '1uKXnpKeGCuyPpRAryFP7Ou4K4t3SgTNksZFQAhvj45E'; 
+  const TEST_SS_ID = '1uKXnpKeGCuyPpRAryFP7Ou4K4t3SgTNksZFQAhvj45E';
   let testProgress = [];
   try {
     const testSs = SpreadsheetApp.openById(TEST_SS_ID);
@@ -231,7 +250,7 @@ function getStudentStats(studentToken) {
 
   const resultData = {
     name: targetNickname,
-    id: targetId, 
+    id: targetId,
     today: formatTime(todayMs),
     week: formatTime(weekMs),
     total: formatTime(totalMs),
@@ -248,33 +267,12 @@ function getStudentStats(studentToken) {
     cheers: todayCheers
   };
 
-  cache.put(studentToken, JSON.stringify(resultData), 900); // 15分間キャッシュ
+  cache.put(studentToken, JSON.stringify(resultData), 900);
   return resultData;
 }
 
 // ====================================================================
-// ③ エール（応援）送信処理
-// ====================================================================
-function sendCheer(targetStudentId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("管理シート");
-  const data = sheet.getDataRange().getValues();
-  const now = new Date();
-  const todayStr = Utilities.formatDate(now, "JST", "yyyy/MM/dd");
-
-  for (let i = data.length - 1; i >= 1; i--) {
-    const rowDateStr = data[i][0] instanceof Date ? Utilities.formatDate(data[i][0], "JST", "yyyy/MM/dd") : "";
-    if (String(data[i][1]).trim() === targetStudentId && rowDateStr === todayStr) {
-      const currentCheer = parseInt(data[i][5] || 0); 
-      sheet.getRange(i + 1, 6).setValue(currentCheer + 1);
-      return "応援を届けました！";
-    }
-  }
-  return "現在、応援できる記録が見つかりませんでした。";
-}
-
-// ====================================================================
-// ④ 生徒個別の模試・目標設定保存
+// ③ 設定保存
 // ====================================================================
 function saveStudentSettings(token, examName, examDate) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -305,14 +303,14 @@ function saveStudentSettings(token, examName, examDate) {
   settingsSheet.getRange(targetRow, 1).setValue(studentId);
   settingsSheet.getRange(targetRow, 2).setValue(examName);
   settingsSheet.getRange(targetRow, 3).setValue(examDate);
-  
-  CacheService.getScriptCache().remove(token); 
-  
+
+  CacheService.getScriptCache().remove(token);
+
   return "設定を保存しました！";
 }
 
 // ====================================================================
-// ⑤ 受付打刻処理（キャッシュ自動クリア機能付き）
+// ④ 受付打刻処理（★ 大幅高速化版 ★）
 // ====================================================================
 function processScan(studentId) {
   if (!studentId) return "エラー：IDが読み込めませんでした";
@@ -321,42 +319,62 @@ function processScan(studentId) {
   const sheet = ss.getSheetByName("管理シート");
   const now = new Date();
   const todayStr = Utilities.formatDate(now, "JST", "yyyy/MM/dd");
-  
-  const bValues = sheet.getRange("B:B").getValues();
-  const data = sheet.getDataRange().getValues();
-  let existingRowIndex = -1;
 
-  for (let i = 1; i < data.length; i++) {
-    const rowDateStr = data[i][0] instanceof Date ? Utilities.formatDate(data[i][0], "JST", "yyyy/MM/dd") : "";
-    if (String(data[i][1]).trim() === cleanTargetId && rowDateStr === todayStr && (data[i][4] === "" || data[i][4] === null)) {
-      existingRowIndex = i + 1; break;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 1) return "エラー：シートが空です";
+
+  // ★ 直近100件だけを後ろから取得（typically 1日以内の打刻）
+  // 100件で見つからなければ300件、500件と段階的に拡張する保険つき
+  let existingRowIndex = -1;
+  let searchSize = Math.min(100, lastRow - 1);
+  let attempt = 0;
+  let maxAttempts = 3; // 100, 300, 500 件まで遡る
+
+  while (existingRowIndex === -1 && attempt < maxAttempts && searchSize > 0) {
+    let startRow = Math.max(2, lastRow - searchSize + 1);
+    let numRows = lastRow - startRow + 1;
+    if (numRows <= 0) break;
+
+    // A〜E列のみ取得（F列のエール数は不要）
+    const data = sheet.getRange(startRow, 1, numRows, 5).getValues();
+
+    for (let i = data.length - 1; i >= 0; i--) {
+      const rowDate = data[i][IDX_LOG.DATE];
+      const rowDateStr = rowDate instanceof Date ? Utilities.formatDate(rowDate, "JST", "yyyy/MM/dd") : "";
+      if (rowDateStr !== todayStr) continue;
+      if (String(data[i][IDX_LOG.ID]).trim() !== cleanTargetId) continue;
+      if (data[i][IDX_LOG.OUT] === "" || data[i][IDX_LOG.OUT] === null) {
+        existingRowIndex = startRow + i; // 実際の行番号
+        break;
+      }
     }
+
+    attempt++;
+    searchSize *= 3; // 100 → 300 → 900件
   }
 
   let actionType = "";
   if (existingRowIndex > 0) {
-    sheet.getRange(existingRowIndex, 5).setValue(now);
+    // 退室処理
+    sheet.getRange(existingRowIndex, IDX_LOG.OUT + 1).setValue(now);
     actionType = "退室";
   } else {
-    let targetRow = Math.max(2, sheet.getLastRow() + 1);
-    for (let j = 1; j < bValues.length; j++) {
-      if (bValues[j][0] === "" || bValues[j][0] === null) { targetRow = j + 1; break; }
-    }
-    sheet.getRange(targetRow, 1).setValue(now);
-    sheet.getRange(targetRow, 2).setValue(cleanTargetId);
-    sheet.getRange(targetRow, 4).setValue(now);
+    // 入室処理（最終行の次に追記）
+    const targetRow = lastRow + 1;
+    sheet.getRange(targetRow, 1, 1, 4).setValues([[now, cleanTargetId, "", now]]);
     actionType = "入室";
   }
-  
+
+  // ★ プロフィール検索：見つかったら即break（既存通りだが念のため確認）
   const pData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
   let studentName = "学習者";
-  let studentToken = null; 
+  let studentToken = null;
 
   for (let i = 1; i < pData.length; i++) {
-    if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) { 
-      studentName = pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者"; 
+    if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) {
+      studentName = pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者";
       studentToken = String(pData[i][IDX_PROFILE.TOKEN]).trim();
-      break; 
+      break;
     }
   }
 
@@ -369,13 +387,15 @@ function processScan(studentId) {
 // 補助関数群
 // ====================================================================
 function formatTime(ms) { return `${Math.floor(ms/3600000)}時間${Math.floor((ms%3600000)/60000)}分`; }
+
 function calculateRank(hours) {
   if (hours >= 300) return { current: "SSS MASTER", remainHours: 0 };
   if (hours >= 150) return { current: "PLATINUM", remainHours: (300 - hours).toFixed(1) };
-  if (hours >= 50) return { current: "GOLD", remainHours: (150 - hours).toFixed(1) };
-  if (hours >= 10) return { current: "SILVER", remainHours: (50 - hours).toFixed(1) };
+  if (hours >= 50)  return { current: "GOLD", remainHours: (150 - hours).toFixed(1) };
+  if (hours >= 10)  return { current: "SILVER", remainHours: (50 - hours).toFixed(1) };
   return { current: "BRONZE", remainHours: (10 - hours).toFixed(1) };
 }
+
 function calculateStreak(uniqueDates) {
   let sorted = Array.from(uniqueDates).sort().reverse();
   let streak = 0, check = new Date();
@@ -386,12 +406,98 @@ function calculateStreak(uniqueDates) {
   }
   return streak;
 }
-function onOpen() { SpreadsheetApp.getUi().createMenu('★管理メニュー').addItem('QRメールの下書き作成', 'showDraftDialog').addToUi(); }
-function showDraftDialog() { SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutputFromFile('draftDialog').setWidth(400).setHeight(320), 'QRコード送付'); }
 
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('★管理メニュー').addItem('QRメールの下書き作成', 'showDraftDialog').addToUi();
+}
+
+function showDraftDialog() {
+  SpreadsheetApp.getUi().showModalDialog(
+    HtmlService.createHtmlOutputFromFile('draftDialog').setWidth(400).setHeight(320),
+    'QRコード送付'
+  );
+}
+
+// ====================================================================
+// ⑤ 旧エール送信（廃止済み・互換用に残置）
+// ====================================================================
+function sendCheer(targetStudentId) {
+  return "エール機能は廃止されました";
+}
+
+// ====================================================================
+// 🔧 デバッグ用：今週のランキング状況を出力
+// ====================================================================
+function debugWeeklyRanking() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName('管理シート');
+  const profileSheet = ss.getSheetByName('公開プロフィール');
+
+  const logData = logSheet.getDataRange().getValues();
+  const profileData = profileSheet.getDataRange().getValues();
+
+  let nickMap = {};
+  for (let i = 1; i < profileData.length; i++) {
+    let pId = String(profileData[i][IDX_PROFILE.ID]).trim();
+    let pName = profileData[i][IDX_PROFILE.NAME] || profileData[i][IDX_PROFILE.NICKNAME] || pId;
+    nickMap[pId] = pName;
+  }
+
+  const getMonday = (d) => {
+    let day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1);
+    return new Date(d.getFullYear(), d.getMonth(), diff);
+  };
+  const thisMondayMs = getMonday(new Date()).getTime();
+  console.log('今週月曜:', new Date(thisMondayMs));
+
+  let weeklyMap = {};
+  let weekRecords = [];
+
+  for (let i = logData.length - 1; i >= 1; i--) {
+    let rowId = String(logData[i][IDX_LOG.ID]).trim();
+    let inTime = logData[i][IDX_LOG.IN];
+    let outTime = logData[i][IDX_LOG.OUT];
+
+    if (!(inTime instanceof Date)) continue;
+    let logDateMs = new Date(inTime.getFullYear(), inTime.getMonth(), inTime.getDate()).getTime();
+    if (logDateMs < thisMondayMs) continue;
+
+    let diffMs = (outTime instanceof Date) ? outTime.getTime() - inTime.getTime() : 0;
+    weekRecords.push({
+      id: rowId,
+      name: nickMap[rowId] || '不明',
+      in: inTime,
+      out: outTime || '(未退室)',
+      hours: diffMs > 0 ? (diffMs / 3600000).toFixed(2) : 0
+    });
+    if (diffMs > 0) {
+      weeklyMap[rowId] = (weeklyMap[rowId] || 0) + diffMs;
+    }
+  }
+
+  console.log('今週のレコード件数:', weekRecords.length);
+  console.log('今週のレコード詳細:');
+  weekRecords.forEach(r => console.log(`  ${r.name}(${r.id}): ${r.in} → ${r.out} (${r.hours}h)`));
+
+  console.log('\n今週ランキング集計結果:');
+  Object.keys(weeklyMap).forEach(id => {
+    console.log(`  ${nickMap[id]}: ${(weeklyMap[id]/3600000).toFixed(2)}h`);
+  });
+
+  if (weekRecords.length === 0) {
+    console.log('⚠ 今週のレコードがありません。日付の判定がズレている可能性があります。');
+  }
+  if (Object.keys(weeklyMap).length === 0) {
+    console.log('⚠ ランキングが空です。退室済みの記録が今週分にない可能性があります。');
+  }
+}
+
+// ====================================================================
+// 🔧 デバッグ用：processScanの速度テスト
+// ====================================================================
 function testProcessScanSpeed() {
   const start = new Date().getTime();
-  const result = processScan('テスト用の実在する学習者ID');
+  const result = processScan('テスト用の実在する学習者ID');  // ここを実IDに書き換えて実行
   const elapsed = new Date().getTime() - start;
   console.log(`処理時間: ${elapsed}ms / 結果: ${result}`);
 }
