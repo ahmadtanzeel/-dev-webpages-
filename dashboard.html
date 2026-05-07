@@ -702,6 +702,7 @@
     // =====================================================================
 
     document.addEventListener('DOMContentLoaded', async () => {
+      setupQRToggle();   // QRアコーディオン開閉の監視を開始
       if (!studentToken) {
         showError('URLが正しくありません。管理者から配布されたURLからアクセスしてください。');
         return;
@@ -897,23 +898,36 @@
     // QRコード描画
     // =====================================================================
 
+    // 最後に取得したID（details開閉時の再描画用）
+    let lastQRId = null;
+
     function renderQRCode(studentId) {
       const idText = document.getElementById('qr-id-text');
-      const canvas = document.getElementById('qr-canvas');
 
-      // 要素やIDが無い場合はスキップ（描画失敗で全体が止まらないように）
-      if (!canvas || !idText) return;
       if (!studentId) {
-        idText.textContent = '取得できませんでした';
+        if (idText) idText.textContent = '取得できませんでした';
         return;
       }
       if (typeof QRCode === 'undefined') {
         console.warn('QRCodeライブラリが読み込まれていません');
-        idText.textContent = String(studentId);
+        if (idText) idText.textContent = String(studentId);
         return;
       }
 
-      idText.textContent = String(studentId);
+      lastQRId = studentId;
+      if (idText) idText.textContent = String(studentId);
+
+      // detailsが開いているなら即描画。閉じていればtoggleイベントで描画される。
+      const qrDetails = document.getElementById('box-qr');
+      if (qrDetails && qrDetails.open) {
+        drawQRCanvas(studentId);
+      }
+    }
+
+    function drawQRCanvas(studentId) {
+      const canvas = document.getElementById('qr-canvas');
+      if (!canvas || typeof QRCode === 'undefined' || !studentId) return;
+
       QRCode.toCanvas(canvas, String(studentId), {
         width: 220,
         margin: 1,
@@ -921,6 +935,17 @@
         errorCorrectionLevel: 'M'
       }, (err) => {
         if (err) console.error('QR生成エラー:', err);
+      });
+    }
+
+    // アコーディオンが開かれるたびに再描画（閉じている間は描画されないため）
+    function setupQRToggle() {
+      const qrDetails = document.getElementById('box-qr');
+      if (!qrDetails) return;
+      qrDetails.addEventListener('toggle', () => {
+        if (qrDetails.open && lastQRId) {
+          drawQRCanvas(lastQRId);
+        }
       });
     }
 
