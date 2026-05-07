@@ -6,6 +6,7 @@
   <title>マイダッシュボード | SSS Education</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- ===== PWA / Apple Touch ===== -->
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,10 +17,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-  <style>
-    :root {
-      --gold: #d3ad4f;
-/* 中略 */
   <style>
     :root {
       --gold: #d3ad4f;
@@ -176,35 +173,14 @@
       color: var(--gold);
     }
 
-    .page:nth-child(1) {
-      animation-delay: 0s;
-    }
-
-    .page:nth-child(2) {
-      animation-delay: 0.4s;
-    }
-
-    .page:nth-child(3) {
-      animation-delay: 0.8s;
-    }
+    .page:nth-child(1) { animation-delay: 0s; }
+    .page:nth-child(2) { animation-delay: 0.4s; }
+    .page:nth-child(3) { animation-delay: 0.8s; }
 
     @keyframes flip {
-      0% {
-        transform: rotateY(0deg);
-        z-index: 2;
-      }
-
-      50% {
-        transform: rotateY(-180deg);
-        z-index: 2;
-      }
-
-      50.1%,
-      100% {
-        z-index: 1;
-        transform: rotateY(-180deg);
-        opacity: 0;
-      }
+      0% { transform: rotateY(0deg); z-index: 2; }
+      50% { transform: rotateY(-180deg); z-index: 2; }
+      50.1%, 100% { z-index: 1; transform: rotateY(-180deg); opacity: 0; }
     }
 
     .loading-text {
@@ -225,40 +201,16 @@
       max-width: 400px;
       margin: 0 auto;
     }
-
-    .error-box .err-title {
-      font-size: 14px;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
-
-    .error-box .err-msg {
-      font-size: 12px;
-      color: var(--text-gray);
-      margin-bottom: 15px;
-      line-height: 1.5;
-    }
-
+    .error-box .err-title { font-size: 14px; letter-spacing: 2px; margin-bottom: 10px; font-weight: bold; }
+    .error-box .err-msg { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; line-height: 1.5; }
     .error-box .err-retry {
-      background: transparent;
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      padding: 8px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      letter-spacing: 1px;
+      background: transparent; border: 1px solid var(--gold); color: var(--gold);
+      padding: 8px 20px; border-radius: 4px; cursor: pointer; font-size: 12px; letter-spacing: 1px;
     }
-
-    .error-box .err-retry:hover {
-      background: var(--gold);
-      color: var(--black);
-    }
+    .error-box .err-retry:hover { background: var(--gold); color: var(--black); }
 
     /* カウントダウン */
     .countdown-grid {
-
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
       gap: 10px;
@@ -312,508 +264,87 @@
       border-radius: 8px;
     }
 
-    .rank-title {
-      font-size: 11px;
-      color: var(--text-gray);
-      letter-spacing: 2px;
-      margin-bottom: 5px;
-    }
+    .rank-title { font-size: 11px; color: var(--text-gray); letter-spacing: 2px; margin-bottom: 5px; }
+    .rank-badge { font-size: 20px; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px; }
+    .rank-BRONZE { color: var(--bronze); }
+    .rank-SILVER { color: var(--silver); }
+    .rank-GOLD { color: var(--gold); text-shadow: 0 0 10px rgba(211, 173, 79, 0.5); }
+    .rank-PLATINUM { color: var(--platinum); text-shadow: 0 0 10px rgba(229, 228, 226, 0.5); }
+    .rank-SSSMASTER { color: #ff00ff; text-shadow: 0 0 10px rgba(255, 0, 255, 0.5); }
+    .rank-next { font-size: 11px; color: var(--text-gray); }
 
-    .rank-badge {
-      font-size: 20px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      margin-bottom: 5px;
-    }
-
-    .rank-BRONZE {
-      color: var(--bronze);
-    }
-
-    .rank-SILVER {
-      color: var(--silver);
-    }
-
-    .rank-GOLD {
-      color: var(--gold);
-      text-shadow: 0 0 10px rgba(211, 173, 79, 0.5);
-    }
-
-    .rank-PLATINUM {
-      color: var(--platinum);
-      text-shadow: 0 0 10px rgba(229, 228, 226, 0.5);
-    }
-
-    .rank-SSSMASTER {
-      color: #ff00ff;
-      text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
-    }
-
-    .rank-next {
-      font-size: 11px;
-      color: var(--text-gray);
-    }
-
-    .att-list {
-      margin-top: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .att-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .att-primary {
-      border-bottom: 1px dashed #444;
-      padding-bottom: 12px;
-      margin-bottom: 5px;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .att-primary .att-label {
-      font-size: 14px;
-      color: var(--white);
-      font-weight: bold;
-    }
-
-    .att-primary .att-val {
-      font-size: 32px;
-      color: var(--gold);
-      text-shadow: 0 0 15px rgba(211, 173, 79, 0.4);
-    }
-
-    .att-primary .att-unit {
-      font-size: 12px;
-      color: var(--gold);
-    }
-
-    .att-secondary .att-label {
-      font-size: 12px;
-      color: var(--text-gray);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .att-secondary .att-val {
-      font-size: 16px;
-      font-weight: bold;
-      color: #ff6b6b;
-    }
-
-    .att-secondary .att-unit {
-      font-size: 10px;
-      color: var(--text-gray);
-    }
-
-    .att-val-group {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
+    .att-list { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+    .att-row { display: flex; justify-content: space-between; align-items: center; }
+    .att-primary { border-bottom: 1px dashed #444; padding-bottom: 12px; margin-bottom: 5px; flex-direction: column; gap: 5px; }
+    .att-primary .att-label { font-size: 14px; color: var(--white); font-weight: bold; }
+    .att-primary .att-val { font-size: 32px; color: var(--gold); text-shadow: 0 0 15px rgba(211, 173, 79, 0.4); }
+    .att-primary .att-unit { font-size: 12px; color: var(--gold); }
+    .att-secondary .att-label { font-size: 12px; color: var(--text-gray); display: flex; align-items: center; gap: 5px; }
+    .att-secondary .att-val { font-size: 16px; font-weight: bold; color: #ff6b6b; }
+    .att-secondary .att-unit { font-size: 10px; color: var(--text-gray); }
+    .att-val-group { display: flex; align-items: baseline; gap: 4px; }
 
     /* 目標と実績 */
-    .goal-container {
-      background-color: var(--card-bg);
-      border: 1px solid #333;
-      padding: 20px;
-      margin-bottom: 40px;
-    }
+    .goal-container { background-color: var(--card-bg); border: 1px solid #333; padding: 20px; margin-bottom: 40px; }
+    .goal-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
+    .goal-title { color: var(--gold); letter-spacing: 1px; }
+    .goal-text { color: var(--white); }
+    .progress-track { width: 100%; height: 12px; background-color: #222; border-radius: 6px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #8b6b23, var(--gold)); width: 0%; transition: width 1.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
 
-    .goal-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 15px;
-      font-size: 14px;
-    }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 40px; }
+    .stat-card { background-color: var(--card-bg); border: 1px solid #333; padding: 15px 10px; text-align: center; position: relative; }
+    .stat-card::before { content: ''; position: absolute; top: -1px; left: -1px; width: 10px; height: 10px; border-top: 1px solid var(--gold); border-left: 1px solid var(--gold); }
+    .stat-title { font-size: 11px; color: var(--text-gray); margin-bottom: 8px; letter-spacing: 1px; }
+    .stat-value { font-size: 18px; color: var(--gold); font-weight: bold; }
 
-    .goal-title {
-      color: var(--gold);
-      letter-spacing: 1px;
-    }
-
-    .goal-text {
-      color: var(--white);
-    }
-
-    .progress-track {
-      width: 100%;
-      height: 12px;
-      background-color: #222;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #8b6b23, var(--gold));
-      width: 0%;
-      transition: width 1.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 10px;
-      margin-bottom: 40px;
-    }
-
-    .stat-card {
-      background-color: var(--card-bg);
-      border: 1px solid #333;
-      padding: 15px 10px;
-      text-align: center;
-      position: relative;
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: -1px;
-      left: -1px;
-      width: 10px;
-      height: 10px;
-      border-top: 1px solid var(--gold);
-      border-left: 1px solid var(--gold);
-    }
-
-    .stat-title {
-      font-size: 11px;
-      color: var(--text-gray);
-      margin-bottom: 8px;
-      letter-spacing: 1px;
-    }
-
-    .stat-value {
-      font-size: 18px;
-      color: var(--gold);
-      font-weight: bold;
-    }
-
-    .content-area {
-      display: none;
-    }
+    .content-area { display: none; }
 
     /* 小テスト＆アコーディオン */
-    details.test-container {
-      background-color: var(--card-bg);
-      border: 1px solid #333;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 30px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.8s ease-out;
-    }
-
-    details.test-container summary {
-      outline: none;
-      cursor: pointer;
-      list-style: none;
-      font-size: 16px;
-      color: var(--gold);
-      letter-spacing: 2px;
-      border-bottom: 1px dashed #444;
-      padding-bottom: 15px;
-      margin-bottom: 15px;
-      font-weight: bold;
-    }
-
-    details.test-container summary::-webkit-details-marker {
-      display: none;
-    }
-
-    details.test-container summary::after {
-      content: '▼ OPEN';
-      float: right;
-      font-size: 12px;
-      color: var(--text-gray);
-      margin-top: 2px;
-    }
-
-    details.test-container[open] summary::after {
-      content: '▲ CLOSE';
-    }
-
-    .test-item {
-      margin-bottom: 25px;
-    }
-
-    .test-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .test-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .test-name {
-      color: var(--white);
-      font-size: 14px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .test-count {
-      color: var(--text-gray);
-      font-size: 13px;
-      font-family: monospace;
-    }
-
-    .test-count span {
-      color: var(--gold);
-      font-weight: bold;
-      font-size: 16px;
-    }
-
-    .grid-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .grid-box {
-      width: 30px;
-      height: 30px;
-      border-radius: 4px;
-      border: 1px solid #333;
-      background-color: #111;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      transition: all 0.5s ease;
-      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
-    }
-
-    .stamp-icon {
-      width: 85%;
-      height: 85%;
-      transition: all 0.5s ease;
-    }
-
-    .grid-box:not(.completed) .stamp-icon {
-      opacity: 0.15;
-      filter: grayscale(100%);
-    }
-
-    .grid-box.completed {
-      border-color: rgba(211, 173, 79, 0.4);
-      background-color: rgba(211, 173, 79, 0.05);
-      box-shadow: 0 0 8px rgba(211, 173, 79, 0.15), inset 0 0 5px rgba(255, 255, 255, 0.1);
-      transform: scale(1.05);
-    }
-
-    .grid-box.completed .stamp-icon {
-      opacity: 1;
-      filter: drop-shadow(0 0 4px rgba(211, 173, 79, 0.8));
-      transform: scale(1.1);
-    }
+    details.test-container { background-color: var(--card-bg); border: 1px solid #333; padding: 20px; border-radius: 8px; margin-bottom: 30px; opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
+    details.test-container summary { outline: none; cursor: pointer; list-style: none; font-size: 16px; color: var(--gold); letter-spacing: 2px; border-bottom: 1px dashed #444; padding-bottom: 15px; margin-bottom: 15px; font-weight: bold; }
+    details.test-container summary::-webkit-details-marker { display: none; }
+    details.test-container summary::after { content: '▼ OPEN'; float: right; font-size: 12px; color: var(--text-gray); margin-top: 2px; }
+    details.test-container[open] summary::after { content: '▲ CLOSE'; }
+    .test-item { margin-bottom: 25px; }
+    .test-item:last-child { margin-bottom: 0; }
+    .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .test-name { color: var(--white); font-size: 14px; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+    .test-count { color: var(--text-gray); font-size: 13px; font-family: monospace; }
+    .test-count span { color: var(--gold); font-weight: bold; font-size: 16px; }
+    .grid-container { display: flex; flex-wrap: wrap; gap: 8px; }
+    .grid-box { width: 30px; height: 30px; border-radius: 4px; border: 1px solid #333; background-color: #111; display: flex; justify-content: center; align-items: center; transition: all 0.5s ease; box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8); }
+    .stamp-icon { width: 85%; height: 85%; transition: all 0.5s ease; }
+    .grid-box:not(.completed) .stamp-icon { opacity: 0.15; filter: grayscale(100%); }
+    .grid-box.completed { border-color: rgba(211, 173, 79, 0.4); background-color: rgba(211, 173, 79, 0.05); box-shadow: 0 0 8px rgba(211, 173, 79, 0.15), inset 0 0 5px rgba(255, 255, 255, 0.1); transform: scale(1.05); }
+    .grid-box.completed .stamp-icon { opacity: 1; filter: drop-shadow(0 0 4px rgba(211, 173, 79, 0.8)); transform: scale(1.1); }
 
     /* コミュニティ・グラフ・履歴 */
-    .community-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 15px;
-      margin-bottom: 40px;
-    }
-
-    .comm-card {
-      background-color: var(--card-bg);
-      border: 1px solid #333;
-      padding: 20px;
-      border-radius: 8px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.8s ease-out;
-    }
-
-    .comm-title {
-      color: var(--gold);
-      font-size: 13px;
-      letter-spacing: 2px;
-      margin-bottom: 15px;
-      text-align: center;
-      border-bottom: 1px dashed #444;
-      padding-bottom: 10px;
-    }
-
-    .comm-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .comm-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #222;
-      font-size: 13px;
-      align-items: center;
-    }
-
-    .comm-item:last-child {
-      border-bottom: none;
-    }
-
-    .rank-name {
-      color: var(--white);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .rank-score {
-      color: var(--gold);
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .rank-icon {
-      width: 20px;
-      text-align: center;
-      font-size: 14px;
-    }
-
-    .feed-name {
-      color: var(--platinum);
-    }
-
-    .section-title {
-      font-size: 16px;
-      color: var(--white);
-      margin: 50px 0 20px;
-      padding-left: 10px;
-      border-left: 3px solid var(--gold);
-      letter-spacing: 2px;
-    }
-
-    .chart-container,
-    .history-container {
-      background-color: var(--card-bg);
-      border: 1px solid #333;
-      padding: 20px;
-      margin-bottom: 30px;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.8s ease-out;
-      overflow-x: auto;
-    }
-
-    .visible {
-      opacity: 1 !important;
-      transform: translateY(0) !important;
-    }
-
-    .chart-title {
-      font-size: 13px;
-      color: var(--text-gray);
-      margin-bottom: 20px;
-      letter-spacing: 2px;
-      text-align: center;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 300px;
-    }
-
-    th {
-      color: var(--gold);
-      border-bottom: 1px solid var(--gold);
-      padding: 10px 5px;
-      text-align: center;
-      font-size: 12px;
-      font-weight: normal;
-    }
-
-    td {
-      border-bottom: 1px solid #222;
-      padding: 12px 5px;
-      text-align: center;
-      font-size: 13px;
-    }
+    .community-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 40px; }
+    .comm-card { background-color: var(--card-bg); border: 1px solid #333; padding: 20px; border-radius: 8px; opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; }
+    .comm-title { color: var(--gold); font-size: 13px; letter-spacing: 2px; margin-bottom: 15px; text-align: center; border-bottom: 1px dashed #444; padding-bottom: 10px; }
+    .comm-list { list-style: none; padding: 0; margin: 0; }
+    .comm-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #222; font-size: 13px; align-items: center; }
+    .comm-item:last-child { border-bottom: none; }
+    .rank-name { color: var(--white); display: flex; align-items: center; gap: 8px; }
+    .rank-score { color: var(--gold); font-weight: bold; font-size: 14px; }
+    .rank-icon { width: 20px; text-align: center; font-size: 14px; }
+    .feed-name { color: var(--platinum); }
+    .section-title { font-size: 16px; color: var(--white); margin: 50px 0 20px; padding-left: 10px; border-left: 3px solid var(--gold); letter-spacing: 2px; }
+    .chart-container, .history-container { background-color: var(--card-bg); border: 1px solid #333; padding: 20px; margin-bottom: 30px; opacity: 0; transform: translateY(20px); transition: all 0.8s ease-out; overflow-x: auto; }
+    .visible { opacity: 1 !important; transform: translateY(0) !important; }
+    .chart-title { font-size: 13px; color: var(--text-gray); margin-bottom: 20px; letter-spacing: 2px; text-align: center; }
+    table { width: 100%; border-collapse: collapse; min-width: 300px; }
+    th { color: var(--gold); border-bottom: 1px solid var(--gold); padding: 10px 5px; text-align: center; font-size: 12px; font-weight: normal; }
+    td { border-bottom: 1px solid #222; padding: 12px 5px; text-align: center; font-size: 13px; }
 
     /* 設定モーダル */
-    #settings-modal {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--card-bg);
-      border: 2px solid var(--gold);
-      padding: 30px;
-      z-index: 1000;
-      border-radius: 15px;
-      width: 80%;
-      max-width: 300px;
-      box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
-    }
-
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 999;
-    }
-
-    .modal-input {
-      width: 100%;
-      background: #000;
-      border: 1px solid #444;
-      color: #fff;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      box-sizing: border-box;
-    }
-
-    .modal-btn {
-      background: var(--gold);
-      color: var(--black);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 100%;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-
-    .modal-btn:disabled {
-      opacity: 0.5;
-      cursor: wait;
-    }
-
-    .settings-trigger {
-      font-size: 12px;
-      color: var(--text-gray);
-      text-decoration: underline;
-      cursor: pointer;
-      text-align: center;
-      display: block;
-      margin-top: 10px;
-      margin-bottom: 30px;
-    }
-
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    #settings-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--card-bg); border: 2px solid var(--gold); padding: 30px; z-index: 1000; border-radius: 15px; width: 80%; max-width: 300px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.9); }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 999; }
+    .modal-input { width: 100%; background: #000; border: 1px solid #444; color: #fff; padding: 10px; margin: 10px 0; border-radius: 5px; box-sizing: border-box;}
+    .modal-btn { background: var(--gold); color: var(--black); border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px;}
+    .modal-btn:disabled { opacity: 0.5; cursor: wait; }
+    .settings-trigger { font-size: 12px; color: var(--text-gray); text-decoration: underline; cursor: pointer; text-align: center; display: block; margin-top: 10px; margin-bottom: 30px;}
 
     /* ===== 更新ボタン ===== */
     .refresh-btn {
@@ -833,34 +364,11 @@
       transition: all 0.2s;
       padding: 0;
     }
-
-    .refresh-btn:hover {
-      background: rgba(211, 173, 79, 0.1);
-      border-color: var(--gold);
-    }
-
-    .refresh-btn:active {
-      transform: scale(0.92);
-    }
-
-    .refresh-btn:disabled {
-      opacity: 0.5;
-      cursor: wait;
-    }
-
-    .refresh-btn.spinning svg {
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
-      }
-
-      to {
-        transform: rotate(360deg);
-      }
-    }
+    .refresh-btn:hover { background: rgba(211, 173, 79, 0.1); border-color: var(--gold); }
+    .refresh-btn:active { transform: scale(0.92); }
+    .refresh-btn:disabled { opacity: 0.5; cursor: wait; }
+    .refresh-btn.spinning svg { animation: spin 0.8s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
     /* ===== QRコード ===== */
     .qr-content {
@@ -869,7 +377,6 @@
       align-items: center;
       padding: 10px 0 5px;
     }
-
     .qr-note {
       color: var(--text-gray);
       font-size: 12px;
@@ -877,7 +384,6 @@
       margin: 0 0 20px 0;
       text-align: center;
     }
-
     .qr-frame {
       background: #ffffff;
       padding: 16px;
@@ -885,18 +391,13 @@
       box-shadow: 0 0 30px rgba(211, 173, 79, 0.15);
       margin-bottom: 20px;
     }
-
-    .qr-frame canvas {
-      display: block;
-    }
-
+    .qr-frame canvas { display: block; }
     .qr-id-label {
       font-size: 10px;
       color: var(--text-gray);
       letter-spacing: 2px;
       margin: 0 0 5px 0;
     }
-
     .qr-id {
       font-size: 18px;
       color: var(--gold);
@@ -912,38 +413,26 @@
   <svg style="display: none;">
     <defs>
       <symbol id="sss-logo" viewBox="0 0 2500 2500">
-        <path
-          d="M0 0 C5.12108162 0.01708994 10.24169479 0.00689181 15.36276054 -0.0103302 C89.53486049 -0.22070922 163.47312287 7.61023073 236.14550781 22.39111328 C236.98863525 22.56235718 237.8317627 22.73360107 238.70043945 22.91003418 C323.18111166 40.14577719 405.20678031 67.13053206 564.67626953 143.97509766 C567.8912273 145.81875547 571.14881766 147.57687383 574.41137695 149.33447266 C594.21208203 160.01834942 613.39413374 171.96778913 632.14550781 184.39111328 C632.9444043 184.91737305 633.74330078 185.44363281 634.56640625 185.98583984 C658.32305374 201.64014421 681.68724395 217.917209 704.14550781 235.39111328 C705.71595209 236.58857705 707.28640488 237.78603015 708.85766602 238.98242188 C716.47691662 244.79653194 723.90992741 250.83176608 731.32519531 256.90283203 C732.91812646 258.20520707 734.51580301 259.5017736 736.11425781 260.79736328 C746.2837026 269.05255964 756.21781543 277.57885814 765.91894531 286.37939453 C767.97655172 288.23845997 770.05397545 290.07039686 772.14550781 291.89111328 C776.85989519 296.00565813 781.51947756 300.17757456 786.14550781 304.39111328 C786.632285 304.83432419 787.11906219 305.2775351 787.62059021 305.73417664 C799.11044271 316.2381065 810.12578551 327.21583591 821.11865234 338.23388672 C823.65762535 340.77861028 826.20113925 343.31874074 828.74595642 345.85761833 C830.73823038 347.84625637 832.72808939 349.83729721 834.71725464 351.82904434 C836.10223528 353.21499785 837.48919658 354.5989712 838.8762207 355.98287964 C843.29101157 360.41400419 847.5795859 364.89467653 851.64538574 369.64944458 C854.22447727 372.64381622 856.94281644 375.50867724 859.64550781 378.39111328 C864.23761321 383.31637524 868.76417194 388.2764606 873.14550781 393.39111328 C874.42941406 394.87417969 874.42941406 394.87417969 875.73925781 396.38720703 C883.09021341 404.89610515 890.2713288 413.53828759 897.38867188 422.24316406 C899.12523102 424.36632239 900.86575287 426.48618704 902.60644531 428.60595703 C908.51357664 435.81677235 914.27909668 443.09581152 919.81396484 450.59863281 C921.40100817 452.73505967 923.00517512 454.85812089 924.61035156 456.98095703 C932.09164019 466.88371158 939.42469456 476.86467785 946.51318359 487.05224609 C948.31770509 489.63784525 950.13564094 492.21373775 951.95410156 494.78955078 C960.4759078 506.89790974 968.65003744 519.17383173 976.48828125 531.73535156 C978.08895272 534.30048183 979.69866116 536.85974788 981.30957031 539.41845703 C995.42290729 561.92919662 1008.72992199 584.90194994 1021.14550781 608.39111328 C1021.63825195 609.32020508 1022.13099609 610.24929688 1022.63867188 611.20654297 C1026.18817763 617.91064567 1029.68345811 624.64146242 1033.14550781 631.39111328 C1033.69319824 632.4578125 1034.24088867 633.52451172 1034.80517578 634.62353516 C1055.89541839 675.85330473 1073.79869043 718.49161179 1089.33166504 762.1071167 C1090.12206213 764.3253145 1090.91624602 766.5421268 1091.7109375 768.75878906 C1124.60932042 860.77498303 1144.36829664 957.49351848 1155.34863281 1122.09423828 C1155.35146019 1123.09717674 1155.35428757 1124.1001152 1155.35720062 1125.13344574 C1155.37207335 1130.46673325 1155.38137144 1135.79999466 1155.38574219 1141.13330078 C1155.39007482 1145.42180126 1155.40377901 1149.71009463 1155.42675781 1153.99853516 C1155.92171401 1248.37749572 1144.08561359 1342.49620524 1104.7666626 1490.41760254 C1104.10833464 1492.50921855 1103.45380998 1494.60200545 1102.79931641 1496.69482422 C1089.46465485 1539.2281453 1073.53247589 1580.78229067 1055.14550781 1621.39111328 C1054.67242188 1622.44024902 1054.19933594 1623.48938477 1053.71191406 1624.5703125 C1040.87771944 1652.93235069 1027.22091911 1681.00534422 1011.56152344 1707.921875 C1009.71786563 1711.13683277 1007.95974727 1714.39442312 1006.20214844 1717.65698242 C995.51827168 1737.4576875 983.56883197 1756.63973921 971.14550781 1775.39111328 C970.61924805 1776.19000977 970.09298828 1776.98890625 969.55078125 1777.81201172 C953.89647689 1801.5686592 937.61941209 1824.93284942 920.14550781 1847.39111328 C918.94804405 1848.96155756 917.75059094 1850.53201035 916.55419922 1852.10327148 C910.74008915 1859.72252208 904.70485501 1867.15553288 898.63378906 1874.57080078 C897.33141403 1876.16373193 896.03484749 1877.76140848 894.73925781 1879.35986328 C886.48406146 1889.52930807 877.95776295 1899.4634209 869.15722656 1909.16455078 C867.29816112 1911.22215719 865.46622423 1913.29958091 863.64550781 1915.39111328 C859.53096296 1920.10550066 855.35904653 1924.76508303 851.14550781 1929.39111328 C850.70229691 1929.87789047 850.259086 1930.36466766 849.80244446 1930.86619568 C839.29851459 1942.35604818 828.32078519 1953.37139098 817.30273438 1964.36425781 C814.75801081 1966.90323082 812.21788035 1969.44674472 809.67900276 1971.99156189 C807.69036472 1973.98383585 805.69932389 1975.97369486 803.70757675 1977.96286011 C802.32162325 1979.34784074 800.93764989 1980.73480205 799.55374146 1982.12182617 C795.1226169 1986.53661704 790.64194457 1990.82519137 785.88717651 1994.89099121 C782.89280487 1997.47008274 780.02794385 2000.18842191 777.14550781 2002.89111328 C772.22024585 2007.48321868 767.2601605 2012.00977741 762.14550781 2016.39111328 C761.15679688 2017.24705078 760.16808594 2018.10298828 759.14941406 2018.98486328 C750.64051595 2026.33581888 741.99833351 2033.51693427 733.29345703 2040.63427734 C731.1702987 2042.37083649 729.05043405 2044.11135834 726.93066406 2045.85205078 C719.71984874 2051.75918211 712.44080958 2057.52470214 704.93798828 2063.05957031 C702.80156142 2064.64661364 700.6785002 2066.25078059 698.55566406 2067.85595703 C688.65290951 2075.33724566 678.67194324 2082.67030003 668.484375 2089.75878906 C665.89877584 2091.56331056 663.32288334 2093.38124641 660.74707031 2095.19970703 C648.63871136 2103.72151326 636.36278937 2111.89564291 623.80126953 2119.73388672 C621.23613926 2121.33455819 618.67687321 2122.94426663 616.11816406 2124.55517578 C593.60742448 2138.66851276 570.63467115 2151.97552746 547.14550781 2164.39111328 C546.21641602 2164.88385742 545.28732422 2165.37660156 544.33007812 2165.88427734 C537.62597543 2169.43378309 530.89515867 2172.92906358 524.14550781 2176.39111328 C522.54545898 2177.21264893 522.54545898 2177.21264893 520.91308594 2178.05078125 C479.68331636 2199.14102386 437.0450093 2217.0442959 393.42950439 2232.57727051 C391.2113066 2233.3676676 388.99449429 2234.16185149 386.77783203 2234.95654297 C294.76163807 2267.85492589 198.04310262 2287.61390211 33.44238281 2298.59423828 C32.43944435 2298.59706566 31.43650589 2298.59989304 30.40317535 2298.60280609 C25.06988785 2298.61767882 19.73662644 2298.62697691 14.40332031 2298.63134766 C10.11481983 2298.63568029 5.82652646 2298.64938447 1.53808594 2298.67236328 C-92.84087463 2299.16731948 -186.95958415 2287.33121906 -334.88098145 2248.01226807 C-336.97259746 2247.35394011 -339.06538435 2246.69941545 -341.15820312 2246.04492188 C-383.69152421 2232.71026032 -425.24566957 2216.77808136 -465.85449219 2198.39111328 C-467.4281958 2197.68148437 -467.4281958 2197.68148437 -469.03369141 2196.95751953 C-497.39572959 2184.12332491 -525.46872313 2170.46652458 -552.38525391 2154.80712891 C-555.60021168 2152.9634711 -558.85780203 2151.20535274 -562.12036133 2149.44775391 C-581.92106641 2138.76387715 -601.10311812 2126.81443744 -619.85449219 2114.39111328 C-620.65338867 2113.86485352 -621.45228516 2113.33859375 -622.27539062 2112.79638672 C-646.03203811 2097.14208236 -669.39622833 2080.86501756 -691.85449219 2063.39111328 C-693.42493647 2062.19364952 -694.99538926 2060.99619641 -696.56665039 2059.79980469 C-704.18590099 2053.98569462 -711.61891179 2047.95046048 -719.03417969 2041.87939453 C-720.62711083 2040.5770195 -722.22478739 2039.28045296 -723.82324219 2037.98486328 C-733.99268697 2029.72966693 -743.92679981 2021.20336842 -753.62792969 2012.40283203 C-755.6855361 2010.54376659 -757.76295982 2008.7118297 -759.85449219 2006.89111328 C-764.56887957 2002.77656843 -769.22846193 1998.604652 -773.85449219 1994.39111328 C-774.34126938 1993.94790237 -774.82804657 1993.50469147 -775.32957458 1993.04804993 C-786.81942709 1982.54412006 -797.83476988 1971.56639065 -808.82763672 1960.54833984 C-811.36660973 1958.00361628 -813.91012363 1955.46348582 -816.4549408 1952.92460823 C-818.44721475 1950.93597019 -820.43707376 1948.94492936 -822.42623901 1946.95318222 C-823.81121965 1945.56722871 -825.19818095 1944.18325536 -826.58520508 1942.79934692 C-830.99999595 1938.36822237 -835.28857027 1933.88755003 -839.35437012 1929.13278198 C-841.93346164 1926.13841034 -844.65180082 1923.27354932 -847.35449219 1920.39111328 C-851.94659758 1915.46585132 -856.47315631 1910.50576597 -860.85449219 1905.39111328 C-862.13839844 1903.90804688 -862.13839844 1903.90804688 -863.44824219 1902.39501953 C-870.79919779 1893.88612142 -877.98031318 1885.24393898 -885.09765625 1876.5390625 C-886.83421539 1874.41590417 -888.57473724 1872.29603952 -890.31542969 1870.17626953 C-896.22256102 1862.96545421 -901.98808105 1855.68641504 -907.52294922 1848.18359375 C-909.10999255 1846.04716689 -910.71415949 1843.92410567 -912.31933594 1841.80126953 C-919.80062457 1831.89851498 -927.13367894 1821.91754871 -934.22216797 1811.72998047 C-936.02668947 1809.14438131 -937.84462532 1806.56848881 -939.66308594 1803.99267578 C-948.18489217 1791.88431683 -956.35902182 1779.60839483 -964.19726562 1767.046875 C-965.7979371 1764.48174473 -967.40764554 1761.92247868 -969.01855469 1759.36376953 C-983.13189166 1736.85302995 -996.43890637 1713.88027662 -1008.85449219 1690.39111328 C-1009.34723633 1689.46202148 -1009.83998047 1688.53292969 -1010.34765625 1687.57568359 C-1013.897162 1680.87158089 -1017.39244249 1674.14076414 -1020.85449219 1667.39111328 C-1021.67602783 1665.79106445 -1021.67602783 1665.79106445 -1022.51416016 1664.15869141 C-1043.97917214 1622.1962771 -1062.0665938 1578.78517994 -1077.85449219 1534.39111328 C-1078.2528125 1533.27446289 -1078.2528125 1533.27446289 -1078.65917969 1532.13525391 C-1108.13181076 1449.452183 -1127.29734694 1363.219825 -1143.24560547 1155.53662109 C-1143.22851553 1150.41553948 -1143.23871365 1145.29492631 -1143.25593567 1140.17386055 C-1143.46631469 1066.0017606 -1135.63537474 992.06349822 -1120.85449219 919.39111328 C-1120.68324829 918.54798584 -1120.51200439 917.7048584 -1120.33557129 916.83618164 C-1103.09982827 832.35550944 -1076.1150734 750.32984078 -999.27050781 590.86035156 C-997.42685 587.64539379 -995.66873164 584.38780344 -993.91113281 581.12524414 C-983.22725605 561.32453906 -971.27781634 542.14248735 -958.85449219 523.39111328 C-958.32823242 522.5922168 -957.80197266 521.79332031 -957.25976562 520.97021484 C-941.60546126 497.21356736 -925.32839647 473.84937714 -907.85449219 451.39111328 C-906.65702842 449.820669 -905.45957532 448.25021621 -904.26318359 446.67895508 C-898.44907352 439.05970448 -892.41383939 431.62669368 -886.34277344 424.21142578 C-885.0403984 422.61849464 -883.74383187 421.02081808 -882.44824219 419.42236328 C-874.19304583 409.25291849 -865.66674733 399.31880566 -856.86621094 389.61767578 C-855.0071455 387.56006937 -853.17520861 385.48264565 -851.35449219 383.39111328 C-847.23994734 378.6767259 -843.06803091 374.01714354 -838.85449219 369.39111328 C-838.41128128 368.90433609 -837.96807037 368.4175589 -837.51142883 367.91603088 C-827.00749897 356.42617838 -816.02976956 345.41083559 -805.01171875 334.41796875 C-802.46699519 331.87899574 -799.92686473 329.33548184 -797.38798714 326.79066467 C-795.3993491 324.79839072 -793.40830826 322.8085317 -791.41656113 320.81936646 C-790.03060762 319.43438582 -788.64663427 318.04742452 -787.26272583 316.66040039 C-782.83160128 312.24560952 -778.35092894 307.9570352 -773.59616089 303.89123535 C-770.60178924 301.31214382 -767.73692822 298.59380465 -764.85449219 295.89111328 C-759.92923023 291.29900789 -754.96914487 286.77244916 -749.85449219 282.39111328 C-748.86578125 281.53517578 -747.87707031 280.67923828 -746.85839844 279.79736328 C-738.34950032 272.44640768 -729.70731788 265.26529229 -721.00244141 258.14794922 C-718.87928308 256.41139008 -716.75941842 254.67086823 -714.63964844 252.93017578 C-707.42883312 247.02304445 -700.14979395 241.25752442 -692.64697266 235.72265625 C-690.51054579 234.13561292 -688.38748458 232.53144597 -686.26464844 230.92626953 C-676.36189388 223.4449809 -666.38092762 216.11192653 -656.19335938 209.0234375 C-653.60776022 207.218916 -651.03186771 205.40098015 -648.45605469 203.58251953 C-636.34769573 195.0607133 -624.07177374 186.88658365 -611.51025391 179.04833984 C-608.94512364 177.44766837 -606.38585759 175.83795993 -603.82714844 174.22705078 C-581.31640885 160.11371381 -558.34365552 146.8066991 -534.85449219 134.39111328 C-533.92540039 133.89836914 -532.99630859 133.405625 -532.0390625 132.89794922 C-525.3349598 129.34844347 -518.60414305 125.85316298 -511.85449219 122.39111328 C-510.78779297 121.84342285 -509.72109375 121.29573242 -508.62207031 120.73144531 C-466.65965601 99.26643333 -423.24855885 81.17901167 -378.85449219 65.39111328 C-378.11005859 65.12556641 -377.365625 64.86001953 -376.59863281 64.58642578 C-293.91556191 35.11379471 -207.6832039 15.94825853 0 0 Z "
-          fill="#000000" transform="translate(1242.8544921875,98.60888671875)" />
-        <path
-          d="M0 0 C0.33 0 0.66 0 1 0 C1.3258563 12.25697853 1.57386664 24.51291039 1.72537041 36.77335453 C1.79812671 42.46806475 1.8966192 48.15979063 2.05615234 53.8527832 C2.20943804 59.35793804 2.29221195 64.86024304 2.3282814 70.3673687 C2.35394723 72.45711548 2.40407064 74.54672397 2.48022079 76.63524055 C2.83312938 86.72504697 3.00689447 94.78582024 -3.91837883 102.67581081 C-6.31539935 105.11001659 -8.79841454 107.3948004 -11.40101242 109.60693169 C-13.40344702 111.35149069 -15.11599575 113.27286665 -16.8125 115.3125 C-21.55705011 120.8180807 -26.45737365 126.18433994 -31.328125 131.578125 C-35.29010879 135.97134512 -39.22018348 140.3870655 -43.1015625 144.8515625 C-46.30362213 148.47529254 -49.58734141 152.02515323 -52.86328125 155.58203125 C-56.60878743 159.82054738 -57.25001695 161.99115223 -57.25020635 167.5773052 C-57.25296003 168.25311896 -57.2557137 168.92893272 -57.25855083 169.62522568 C-57.26539288 171.91080095 -57.25787695 174.19610926 -57.25053978 176.48167992 C-57.25251198 178.13550868 -57.25536295 179.7893366 -57.25901759 181.4431625 C-57.26656688 186.0212076 -57.26156438 190.59916879 -57.25466615 195.1772118 C-57.2493771 200.14527195 -57.2556694 205.11331896 -57.26055682 210.08137763 C-57.26753977 218.79986251 -57.26712265 227.51832298 -57.26195335 236.23680878 C-57.2543258 249.201688 -57.25816125 262.1665457 -57.26457582 275.13142469 C-57.27479606 296.27072519 -57.27709944 317.41001884 -57.27462719 338.54932133 C-57.27205383 360.83121136 -57.27511311 383.11308996 -57.2861824 405.39497757 C-57.28668192 406.40143824 -57.28668192 406.40143824 -57.28719152 407.42823145 C-57.29127692 415.61083162 -57.29562848 423.79343164 -57.30005794 431.97603162 C-57.30679704 444.45814768 -57.31296532 456.94026403 -57.3190922 469.4223804 C-57.3197801 470.82374733 -57.32046935 472.22511426 -57.32115994 473.62648118 C-57.33743097 506.66719804 -57.34861768 539.70791594 -57.35778913 572.74863546 C-57.35839859 574.94146588 -57.35901333 577.1342963 -57.35962884 579.32712671 C-57.36907702 613.093776 -57.37592764 646.86042465 -57.37835693 680.6270752 C-57.37846444 682.09364156 -57.37857208 683.56020792 -57.37867985 685.02677428 C-57.37916135 691.61657767 -57.37962539 698.20638106 -57.3800873 704.79618444 C-57.38029244 707.71908565 -57.38049923 710.64198685 -57.38070582 713.56488805 C-57.38085934 715.75480647 -57.38100907 717.94472489 -57.38115862 720.13464331 C-57.38344553 753.12590161 -57.38873801 786.11715386 -57.40629005 819.10840797 C-57.40684139 820.14874547 -57.40684139 820.14874547 -57.40740386 821.21009988 C-57.41513735 835.7522 -57.42366487 850.29429952 -57.43326016 864.83639853 C-57.43774807 871.64655384 -57.44203041 878.45670926 -57.44618607 885.26686478 C-57.44659819 885.93736567 -57.44701031 886.60786657 -57.44743492 887.29868567 C-57.46059957 908.8942052 -57.46016736 930.48969862 -57.45228107 952.08521996 C-57.44414371 974.44607088 -57.44961229 996.80687653 -57.47119068 1019.16771917 C-57.48316993 1032.06027912 -57.48390657 1044.95272746 -57.46869816 1057.84528459 C-57.45962768 1066.45559734 -57.46500404 1075.06582255 -57.48214063 1083.67612282 C-57.49148684 1088.5832832 -57.49450728 1093.49022235 -57.47987001 1098.39737479 C-57.46666217 1102.86529207 -57.47196986 1107.33279732 -57.49178335 1111.80068669 C-57.49569016 1113.40341879 -57.49296374 1115.00618503 -57.48262475 1116.60888854 C-57.35608289 1137.70582117 -64.70329432 1152.11719219 -79 1167 C-80.21898971 1168.36556162 -81.4289182 1169.73932948 -82.625 1171.125 C-87.44612004 1176.6807669 -92.39831813 1182.11894289 -97.328125 1187.578125 C-102.92444996 1193.78357377 -108.45516149 1200.03823317 -113.90234375 1206.375 C-119.79031508 1213.21367981 -125.74653155 1219.96397863 -131.89453125 1226.5703125 C-135.09527793 1230.01068727 -138.22521765 1233.49861699 -141.30078125 1237.05078125 C-144.81406038 1241.08095661 -148.41746334 1245.03146612 -152 1249 C-153.50028679 1250.66640851 -155.00028872 1252.33307353 -156.5 1254 C-158.7717129 1256.52500493 -161.04435414 1259.04913304 -163.3203125 1261.5703125 C-166.71872932 1265.33737115 -170.1081661 1269.10915586 -173.4375 1272.9375 C-177.09178862 1277.13442081 -180.84744973 1281.2365276 -184.59765625 1285.34765625 C-186.56941844 1287.52460996 -188.51365337 1289.71838674 -190.4375 1291.9375 C-193.3988351 1295.3468858 -196.44152486 1298.6779431 -199.5 1302 C-203.14414329 1305.95862186 -206.73913717 1309.9517676 -210.265625 1314.015625 C-214.55679952 1318.9253472 -218.95802108 1323.73874818 -223.328125 1328.578125 C-224.08609375 1329.41859375 -224.8440625 1330.2590625 -225.625 1331.125 C-226.36105469 1331.94097656 -227.09710937 1332.75695313 -227.85546875 1333.59765625 C-230.47457853 1336.53163168 -233.04080756 1339.50893938 -235.58984375 1342.50390625 C-237 1344 -237 1344 -239 1345 C-239.20898931 1332.78657817 -239.36867687 1320.57358509 -239.46630955 1308.35873604 C-239.51318119 1302.68610378 -239.57670381 1297.01469919 -239.67895508 1291.34277344 C-239.77710504 1285.86374822 -239.83063298 1280.3858999 -239.85389519 1274.90606308 C-239.87046122 1272.82082475 -239.90281268 1270.73564728 -239.95157051 1268.65091324 C-240.36413177 1250.27175581 -240.36413177 1250.27175581 -234.65991211 1243.88623047 C-233.13493579 1242.55758901 -231.58335121 1241.25850699 -230 1240 C-228.82663992 1238.71204953 -227.67523333 1237.403177 -226.5625 1236.0625 C-222.90821138 1231.86557919 -219.15255027 1227.7634724 -215.40234375 1223.65234375 C-213.43058156 1221.47539004 -211.48634663 1219.28161326 -209.5625 1217.0625 C-206.6011649 1213.6531142 -203.55847514 1210.3220569 -200.5 1207 C-196.89311242 1203.08184891 -193.29215328 1199.16473926 -189.87260986 1195.08063034 C-188 1193 -188 1193 -185.7407495 1191.00919019 C-180.60685861 1186.2055303 -178.39831518 1182.62652737 -177.88040417 1175.5468933 C-177.80435314 1172.57556156 -177.84156368 1169.61293522 -177.88812542 1166.64136791 C-177.88096661 1164.9776556 -177.86985671 1163.31395647 -177.85517213 1161.65029356 C-177.82623055 1157.07689049 -177.85329945 1152.50527388 -177.8894705 1147.93198564 C-177.91885938 1142.95739133 -177.89589496 1137.9829944 -177.8795374 1133.00837833 C-177.8580615 1124.28918281 -177.86994053 1115.57052719 -177.90360832 1106.85137749 C-177.95349571 1093.88574097 -177.95174203 1080.92047202 -177.93919193 1067.95476389 C-177.91946168 1046.14135583 -177.94100236 1024.32817019 -177.98549461 1002.51480675 C-178.02938979 980.90607866 -178.05286417 959.297474 -178.0496769 937.68869972 C-178.04958477 937.01727402 -178.04949264 936.34584831 -178.04939773 935.65407638 C-178.04843351 928.83680899 -178.0470405 922.01954173 -178.04536432 915.20227448 C-178.04179729 900.6408175 -178.0411766 886.07936069 -178.04189777 871.51790333 C-178.04192903 870.82362932 -178.04196028 870.12935532 -178.04199249 869.41404271 C-178.04368236 836.37444194 -178.07504169 803.334882 -178.11113179 770.29530344 C-178.11512331 766.64072638 -178.11909242 762.98614929 -178.12306521 759.33157221 C-178.12385304 758.60729076 -178.12464086 757.8830093 -178.12545256 757.13677992 C-178.13422017 749.07531752 -178.14294439 741.01385508 -178.15161133 732.95239258 C-178.15278613 731.86245334 -178.15278613 731.86245334 -178.15398467 730.75049513 C-178.19032677 696.99324081 -178.21441269 663.23598256 -178.23338589 629.47871434 C-178.23461882 627.28792416 -178.23586344 625.09713398 -178.23710985 622.9063438 C-178.25582454 589.90172223 -178.26940751 556.89710273 -178.27413654 523.89247608 C-178.27434308 522.49145676 -178.27454988 521.09043744 -178.27475694 519.68941812 C-178.27657983 507.21265891 -178.27823866 494.73589969 -178.27887575 482.25914035 C-178.27930299 474.07700937 -178.28003154 465.89487848 -178.28124428 457.71274757 C-178.28139301 456.70672528 -178.28139301 456.70672528 -178.28154475 455.68037931 C-178.28506367 433.41410045 -178.30709782 411.14787898 -178.33871995 388.88162366 C-178.36947739 367.19092085 -178.38763085 345.50024324 -178.39221694 323.80951866 C-178.39547737 310.91912814 -178.41029642 298.02886534 -178.4412594 285.13851105 C-178.46087485 276.52992025 -178.46608162 267.92139896 -178.45959021 259.31278846 C-178.45633096 254.40671152 -178.45946299 249.50086707 -178.48037853 244.59482857 C-178.49931853 240.12801463 -178.49969277 235.66159153 -178.48552736 231.19476342 C-178.48366442 229.5924304 -178.48846454 227.9900715 -178.50091128 226.38778574 C-178.64073344 207.27498068 -173.18111235 192.82075039 -160 179 C-158.84609155 177.69459372 -157.69968763 176.38249794 -156.5625 175.0625 C-152.90942044 170.86696779 -149.15494451 166.76626447 -145.40625 162.65625 C-143.41351047 160.45647259 -141.4466186 158.24044782 -139.5 156 C-135.87055059 151.82270917 -132.1352098 147.74462761 -128.40625 143.65625 C-126.41351047 141.45647259 -124.4466186 139.24044782 -122.5 137 C-118.87055059 132.82270917 -115.1352098 128.74462761 -111.40625 124.65625 C-109.41351047 122.45647259 -107.4466186 120.24044782 -105.5 118 C-101.87055059 113.82270917 -98.1352098 109.74462761 -94.40625 105.65625 C-92.41351047 103.45647259 -90.4466186 101.24044782 -88.5 99 C-84.86934292 94.82131921 -81.13281424 90.74183696 -77.40234375 86.65234375 C-75.43058156 84.47539004 -73.48634663 82.28161326 -71.5625 80.0625 C-66.34918659 74.06780004 -60.92452397 68.26121235 -55.54296875 62.41796875 C-50.54704044 56.9911248 -45.56932168 51.55607546 -40.734375 45.984375 C-36.44320048 41.0746528 -32.04197892 36.26125182 -27.671875 31.421875 C-24.27655062 27.6569915 -20.88941658 23.88806449 -17.5625 20.0625 C-13.89332038 15.844658 -10.11458986 11.72941983 -6.33203125 7.61328125 C-4.75424826 5.84521287 -3.23108562 4.02711531 -1.76171875 2.16796875 C-0.88966797 1.09482422 -0.88966797 1.09482422 0 0 Z M-10 26 C-11.36335558 27.43030607 -12.68948853 28.89612421 -14 30.375 C-15.21816406 31.74398438 -15.21816406 31.74398438 -16.4609375 33.140625 C-17.29882812 34.08421875 -18.13671875 35.0278125 -19 36 C-20.54049673 37.7093884 -22.08212209 39.41776052 -23.625 41.125 C-26.2525288 44.04296376 -28.86079793 46.97459434 -31.4375 49.9375 C-35.09057956 54.13303221 -38.84505549 58.23373553 -42.59375 62.34375 C-44.58648953 64.54352741 -46.5533814 66.75955218 -48.5 69 C-52.13307247 73.18146076 -55.87197865 77.26374272 -59.60546875 81.35546875 C-61.53535094 83.48683945 -63.43422944 85.63594329 -65.3125 87.8125 C-68.62101673 91.62397414 -72.05782216 95.30977219 -75.5 99 C-79.51518498 103.3048531 -83.48727549 107.63058985 -87.3359375 112.0859375 C-91.59232323 116.98178024 -95.98038447 121.76351301 -100.328125 126.578125 C-103.70385022 130.32127609 -107.07137435 134.06796472 -110.375 137.875 C-113.82716078 141.84097076 -117.38750881 145.70517646 -120.94824219 149.57324219 C-124.10697965 153.0102442 -127.20638336 156.49021321 -130.265625 160.015625 C-134.55679952 164.9253472 -138.95802108 169.73874818 -143.328125 174.578125 C-144.84654065 176.26181038 -146.36221749 177.94797021 -147.875 179.63671875 C-149.19747834 181.1074897 -150.52923854 182.57003401 -151.875 184.01953125 C-164.22302595 197.55274719 -168.62155278 210.45807079 -168.48546219 228.55811596 C-168.48770439 230.23131089 -168.49170744 231.90450421 -168.49730152 233.57769129 C-168.50759834 238.17227711 -168.49302203 242.76649708 -168.47439309 247.36104419 C-168.45857955 252.36075137 -168.46613967 257.36043198 -168.47077537 262.36015445 C-168.47572401 271.12168812 -168.46594145 279.88310875 -168.4465313 288.6446209 C-168.41778785 301.67306628 -168.4121348 314.70144964 -168.41157247 327.72992313 C-168.41017836 348.97546355 -168.3929697 370.22096262 -168.36613696 391.46648443 C-168.33793506 413.84752754 -168.32105048 436.22853659 -168.3201828 458.60959816 C-168.32015601 459.2841244 -168.32012922 459.95865064 -168.32010162 460.65361706 C-168.31982363 468.87974117 -168.32007862 477.10586522 -168.32048968 485.33198932 C-168.32108101 497.87848825 -168.32053013 510.42498721 -168.31989644 522.97148614 C-168.31982538 524.37990108 -168.31975701 525.78831602 -168.31969134 527.19673097 C-168.31812127 560.38254248 -168.30638152 593.56834769 -168.29059624 626.75415526 C-168.28955052 628.95587133 -168.28851537 631.15758741 -168.28748177 633.35930349 C-168.27149807 667.2791736 -168.25030221 701.1990358 -168.22027588 735.11889648 C-168.21897479 736.5932234 -168.21767397 738.06755033 -168.21637342 739.54187725 C-168.2105237 746.16699036 -168.20463922 752.79210344 -168.1987506 759.41721651 C-168.19613909 762.35595316 -168.19353091 765.2946898 -168.19092232 768.23342645 C-168.18896535 770.43521789 -168.1870008 772.63700933 -168.18503589 774.83880077 C-168.15550883 808.00155036 -168.13198844 841.16428204 -168.13303757 874.32704639 C-168.13305674 875.02391511 -168.13307592 875.72078383 -168.13309567 876.43876978 C-168.13355147 891.04864367 -168.13559781 905.65851676 -168.13978422 920.26839006 C-168.14173328 927.10954301 -168.14327056 933.95069603 -168.14455414 940.79184914 C-168.14468647 941.46539241 -168.14481881 942.13893568 -168.14495515 942.83288935 C-168.14900087 964.5363667 -168.12579186 986.23971193 -168.08767956 1007.94315318 C-168.04829581 1030.40286372 -168.03607946 1052.86243967 -168.05621156 1075.32218059 C-168.06689545 1088.27596146 -168.05496995 1101.22927377 -168.0112344 1114.18298756 C-167.98421578 1122.82742153 -167.98598394 1131.471535 -168.01146171 1140.11597297 C-168.02514873 1145.04679017 -168.02597097 1149.97670988 -167.99169484 1154.90744682 C-167.96076351 1159.39105783 -167.9664703 1163.87305459 -168.0017061 1168.35662019 C-168.00790992 1169.9704834 -168.00062883 1171.58446757 -167.97838777 1173.19818945 C-167.82357054 1185.20515296 -167.82357054 1185.20515296 -170.72832343 1189.63685695 C-172.71706034 1191.63834411 -174.75720485 1193.29613659 -177 1195 C-178.15418786 1196.24438448 -179.28380568 1197.51252411 -180.375 1198.8125 C-183.19717497 1202.09215082 -186.08243085 1205.30477699 -189 1208.5 C-191.86471815 1211.64083556 -194.71185902 1214.79100756 -197.5 1218 C-201.13065708 1222.17868079 -204.86718576 1226.25816304 -208.59765625 1230.34765625 C-211.10138223 1233.11193258 -213.56593359 1235.90163294 -215.96708679 1238.75543213 C-218 1241 -218 1241 -220.71638489 1243.48065186 C-226.21221882 1248.61364358 -229.6664172 1252.51602426 -230.2487793 1260.32910156 C-230.24705125 1263.03386831 -230.18918201 1265.69280663 -230.07421875 1268.390625 C-230.05364484 1269.83072906 -230.03801398 1271.2709113 -230.02705383 1272.71112061 C-229.98549303 1276.46149723 -229.87787391 1280.20701883 -229.75531006 1283.95550537 C-229.64179595 1287.79649176 -229.59233791 1291.63828059 -229.53710938 1295.48046875 C-229.41992175 1302.98916834 -229.23277226 1310.49389844 -229 1318 C-228.04714111 1317.21391357 -227.09428223 1316.42782715 -226.11254883 1315.61791992 C-225.5765657 1315.17574631 -225.04058258 1314.73357269 -224.48835754 1314.27799988 C-222.70932602 1312.75040856 -221.19446854 1311.10762273 -219.6875 1309.3125 C-217.04005154 1306.21120323 -214.35737174 1303.15199269 -211.625 1300.125 C-210.86703125 1299.28453125 -210.1090625 1298.4440625 -209.328125 1297.578125 C-207.77604167 1295.859375 -206.22395833 1294.140625 -204.671875 1292.421875 C-201.27655062 1288.6569915 -197.88941658 1284.88806449 -194.5625 1281.0625 C-190.90942044 1276.86696779 -187.15494451 1272.76626447 -183.40625 1268.65625 C-181.41351047 1266.45647259 -179.4466186 1264.24044782 -177.5 1262 C-173.86934292 1257.82131921 -170.13281424 1253.74183696 -166.40234375 1249.65234375 C-164.43058156 1247.47539004 -162.48634663 1245.28161326 -160.5625 1243.0625 C-157.6011649 1239.6531142 -154.55847514 1236.3220569 -151.5 1233 C-147.85144546 1229.03658621 -144.25118856 1225.03949177 -140.72265625 1220.96875 C-138.77840864 1218.74675273 -136.79663036 1216.56144777 -134.8125 1214.375 C-131.19632582 1210.37269197 -127.67992801 1206.29716812 -124.1875 1202.1875 C-119.63142381 1196.83239409 -114.94485437 1191.62291023 -110.15356445 1186.4777832 C-106.95948121 1183.04729664 -103.83950538 1179.56811109 -100.7734375 1176.0234375 C-98.54861908 1173.48498829 -96.27496681 1170.99358224 -94 1168.5 C-92.33308269 1166.66689456 -90.66639823 1164.83357734 -89 1163 C-88.36835937 1162.3090625 -87.73671875 1161.618125 -87.0859375 1160.90625 C-72.88315284 1145.08214289 -67.67562924 1131.9601967 -67.76342678 1110.87908363 C-67.76296994 1109.21681486 -67.76162992 1107.55454613 -67.75948831 1105.89227867 C-67.75613059 1101.31411994 -67.76525617 1096.73605735 -67.77634066 1092.15791394 C-67.78615334 1087.18109903 -67.78425634 1082.20428672 -67.7837792 1077.22746408 C-67.78451532 1068.50143385 -67.7925602 1059.77543423 -67.80533791 1051.04941368 C-67.82424638 1038.07357085 -67.83154623 1025.09774004 -67.83604703 1012.12188511 C-67.8430563 992.29995075 -67.85585208 972.47802637 -67.87319346 952.65609852 C-67.9015927 920.15436638 -67.90966066 887.65265894 -67.90853723 855.15091538 C-67.90829871 848.24037667 -67.90825581 841.32983795 -67.90823404 834.41929924 C-67.90822515 831.63284093 -67.90821171 828.84638262 -67.9081979 826.05992431 C-67.908191 824.66239364 -67.90818451 823.26486296 -67.90817842 821.86733229 C-67.90816214 818.36215615 -67.90813759 814.85698002 -67.90809696 811.35180388 C-67.90772215 778.99548317 -67.91013939 746.63916322 -67.91587308 714.282843 C-67.91625986 712.08929621 -67.91663571 709.89574941 -67.91701056 707.70220262 C-67.92286408 673.91447601 -67.93557019 640.12676524 -67.96496582 606.33905029 C-67.96559709 605.61222447 -67.96622836 604.88539865 -67.96687876 604.1365478 C-67.97708102 592.4171512 -67.98766849 580.69775495 -67.99833309 568.97835877 C-68.02904825 535.22235728 -68.05439844 501.46638107 -68.04940891 467.71036339 C-68.04930903 467.01626412 -68.04920915 466.32216485 -68.04910625 465.60703227 C-68.04694016 451.0545741 -68.04286073 436.5021172 -68.03631479 421.94966035 C-68.03325441 415.13510466 -68.03061046 408.32054884 -68.02820015 401.50599289 C-68.02795516 400.835065 -68.02771017 400.16413711 -68.02745776 399.47287807 C-68.01977114 377.85776724 -68.04156096 356.24280845 -68.07912998 334.62773253 C-68.11791398 312.2544426 -68.12547429 289.88134951 -68.09631621 267.50804092 C-68.08051814 254.60575781 -68.09001037 241.70406117 -68.13528956 228.80184483 C-68.16306353 220.1890668 -68.15835888 211.57670623 -68.12701844 202.96394136 C-68.11009009 198.0527336 -68.10752828 193.14265927 -68.14454591 188.23153658 C-68.17795254 183.76325273 -68.1699384 179.29702908 -68.12891653 174.82882614 C-68.1214264 173.22280857 -68.12901294 171.61663157 -68.15355147 170.010784 C-68.26553105 162.16367645 -68.05438168 156.28330872 -62.59275633 150.15688837 C-61.08785701 148.74304279 -59.56003109 147.35276912 -58 146 C-57.14148437 145.04867187 -56.28296875 144.09734375 -55.3984375 143.1171875 C-54.73070312 142.37726563 -54.06296875 141.63734375 -53.375 140.875 C-50.7474712 137.95703624 -48.13920207 135.02540566 -45.5625 132.0625 C-41.90942044 127.86696779 -38.15494451 123.76626447 -34.40625 119.65625 C-31.8514996 116.83607098 -29.34685269 113.97760192 -26.85546875 111.1015625 C-23.74566894 107.57930503 -20.53374315 104.1496265 -17.33203125 100.7109375 C-11.74187957 94.21250322 -8.73641999 88.4684623 -8.77294922 79.81103516 C-8.77310028 78.61024323 -8.77325134 77.40945129 -8.77340698 76.17227173 C-8.78372955 74.89081268 -8.79405212 73.60935364 -8.8046875 72.2890625 C-8.8084221 70.95242526 -8.81126696 69.61578526 -8.81326294 68.27914429 C-8.82086423 64.77744868 -8.84048212 61.2759215 -8.8626709 57.77429199 C-8.88320526 54.19460325 -8.89228082 50.61488704 -8.90234375 47.03515625 C-8.92373171 40.02336873 -8.95782484 33.01169247 -9 26 C-9.33 26 -9.66 26 -10 26 Z "
-          fill="#F7F7F7" transform="translate(1544,238)" />
-        <path
-          d="M0 0 C4.23259518 1.06745802 6.92196862 3.34342142 9.6640625 6.671875 C11.40243102 10.14861205 11.11842569 13.87058298 10.6640625 17.671875 C8.29698384 22.58811528 5.80365757 24.85790027 0.6640625 26.671875 C-4.6053711 27.23645717 -7.78378295 26.33655084 -12.3359375 23.671875 C-12.60106644 24.26264832 -12.86619537 24.85342163 -13.13935852 25.46209717 C-14.37362448 27.7414733 -15.64216596 29.21374523 -17.48120117 31.02832031 C-18.11914108 31.66288147 -18.75708099 32.29744263 -19.41435242 32.95123291 C-20.10390518 33.62732605 -20.79345795 34.30341919 -21.50390625 35 C-22.21694412 35.7078363 -22.92998199 36.41567261 -23.66462708 37.1449585 C-25.94619944 39.40873272 -28.23432092 41.66573171 -30.5234375 43.921875 C-32.79387625 46.16454006 -35.06278679 48.40869659 -37.32868958 50.65594482 C-38.73722781 52.05239901 -40.14842876 53.44617467 -41.56278992 54.83673096 C-45.47905157 58.7138665 -49.17512764 62.71004873 -52.77354431 66.88339233 C-54.69985941 69.08845901 -56.72893135 71.16236668 -58.81640625 73.21484375 C-59.58791016 73.97861328 -60.35941406 74.74238281 -61.15429688 75.52929688 C-61.93611328 76.29822266 -62.71792969 77.06714844 -63.5234375 77.859375 C-70.29148145 84.43860997 -70.29148145 84.43860997 -76.3359375 91.671875 C-76.9959375 91.341875 -77.6559375 91.011875 -78.3359375 90.671875 C-72.35920845 84.10171186 -66.34511754 77.60047276 -60.0234375 71.359375 C-56.25376044 67.63762772 -52.67291549 63.83302557 -49.2421875 59.796875 C-46.71343289 56.97793544 -44.02947504 54.33248924 -41.3359375 51.671875 C-37.48600843 47.86894644 -33.82062906 44.0160787 -30.33203125 39.875 C-28.62756063 37.99374476 -26.88200454 36.23225091 -25.05859375 34.46875 C-24.17288696 33.60817993 -24.17288696 33.60817993 -23.26928711 32.73022461 C-22.08472838 31.58660648 -20.89177077 30.45160983 -19.68969727 29.32641602 C-16.57495704 26.31438473 -14.44811404 24.24707537 -14.3359375 19.671875 C-14.8309375 18.681875 -14.8309375 18.681875 -15.3359375 17.671875 C-16.08829962 13.5509825 -16.04141401 10.0945469 -14.16015625 6.30078125 C-10.18499637 0.97843115 -6.59801024 -0.47258476 0 0 Z "
-          fill="#040404" transform="translate(926.3359375,2036.328125)" />
-        <path
-          d="M0 0 C0.99 0.33 1.98 0.66 3 1 C2.12786865 1.86689453 1.2557373 2.73378906 0.35717773 3.62695312 C-2.90877402 6.87466792 -6.17130299 10.12580327 -9.43286133 13.37792969 C-10.83917075 14.77924133 -12.24638022 16.17965036 -13.65454102 17.57910156 C-15.69009656 19.60239038 -17.72228531 21.62901128 -19.75390625 23.65625 C-20.37399063 24.2711731 -20.99407501 24.88609619 -21.63294983 25.51965332 C-25.3938409 29.28007103 -28.93991849 33.16969482 -32.41700745 37.19338989 C-34.35246223 39.40225194 -36.38662834 41.48423289 -38.48046875 43.54296875 C-39.63772461 44.68862305 -39.63772461 44.68862305 -40.81835938 45.85742188 C-41.60017578 46.62634766 -42.38199219 47.39527344 -43.1875 48.1875 C-49.95554395 54.76673497 -49.95554395 54.76673497 -56 62 C-56.66 61.67 -57.32 61.34 -58 61 C-52.02327095 54.42983686 -46.00918004 47.92859776 -39.6875 41.6875 C-35.91782294 37.96575272 -32.33697799 34.16115057 -28.90625 30.125 C-25.88205527 26.75376653 -22.63236178 23.61229587 -19.41113281 20.43066406 C-15.99864704 17.04394911 -12.78456744 13.55359037 -9.66796875 9.890625 C-6.61481008 6.42990183 -3.30030819 3.22315813 0 0 Z "
-          fill="#181818" transform="translate(906,2066)" />
-        <path
-          d="M0 0 C0.66 0 1.32 0 2 0 C0.43167514 3.79974848 -1.9520803 6.16765382 -4.8671875 9.02734375 C-5.3431839 9.49813858 -5.8191803 9.96893341 -6.30960083 10.45399475 C-7.82670321 11.95335315 -9.35032574 13.44584509 -10.875 14.9375 C-12.39167448 16.42640982 -13.90680723 17.91680727 -15.41897583 19.41029358 C-16.79539529 20.76897664 -18.17662159 22.12278503 -19.55810547 23.47631836 C-21.88069019 25.87669412 -23.96154256 28.3566441 -26 31 C-26.66 30.67 -27.32 30.34 -28 30 C-21.49533053 22.84947682 -14.93327107 15.79788464 -8.01074219 9.04785156 C-5.76311451 6.8404984 -3.72171192 4.64332091 -1.78125 2.15625 C-1.1934375 1.4446875 -0.605625 0.733125 0 0 Z "
-          fill="#3D3D3D" transform="translate(876,2097)" />
+        <path d="M0 0 C5.12108162 0.01708994 10.24169479 0.00689181 15.36276054 -0.0103302 C89.53486049 -0.22070922 163.47312287 7.61023073 236.14550781 22.39111328 C236.98863525 22.56235718 237.8317627 22.73360107 238.70043945 22.91003418 C323.18111166 40.14577719 405.20678031 67.13053206 564.67626953 143.97509766 C567.8912273 145.81875547 571.14881766 147.57687383 574.41137695 149.33447266 C594.21208203 160.01834942 613.39413374 171.96778913 632.14550781 184.39111328 C632.9444043 184.91737305 633.74330078 185.44363281 634.56640625 185.98583984 C658.32305374 201.64014421 681.68724395 217.917209 704.14550781 235.39111328 C705.71595209 236.58857705 707.28640488 237.78603015 708.85766602 238.98242188 C716.47691662 244.79653194 723.90992741 250.83176608 731.32519531 256.90283203 C732.91812646 258.20520707 734.51580301 259.5017736 736.11425781 260.79736328 C746.2837026 269.05255964 756.21781543 277.57885814 765.91894531 286.37939453 C767.97655172 288.23845997 770.05397545 290.07039686 772.14550781 291.89111328 C776.85989519 296.00565813 781.51947756 300.17757456 786.14550781 304.39111328 C786.632285 304.83432419 787.11906219 305.2775351 787.62059021 305.73417664 C799.11044271 316.2381065 810.12578551 327.21583591 821.11865234 338.23388672 C823.65762535 340.77861028 826.20113925 343.31874074 828.74595642 345.85761833 C830.73823038 347.84625637 832.72808939 349.83729721 834.71725464 351.82904434 C836.10223528 353.21499785 837.48919658 354.5989712 838.8762207 355.98287964 C843.29101157 360.41400419 847.5795859 364.89467653 851.64538574 369.64944458 C854.22447727 372.64381622 856.94281644 375.50867724 859.64550781 378.39111328 C864.23761321 383.31637524 868.76417194 388.2764606 873.14550781 393.39111328 C874.42941406 394.87417969 874.42941406 394.87417969 875.73925781 396.38720703 C883.09021341 404.89610515 890.2713288 413.53828759 897.38867188 422.24316406 C899.12523102 424.36632239 900.86575287 426.48618704 902.60644531 428.60595703 C908.51357664 435.81677235 914.27909668 443.09581152 919.81396484 450.59863281 C921.40100817 452.73505967 923.00517512 454.85812089 924.61035156 456.98095703 C932.09164019 466.88371158 939.42469456 476.86467785 946.51318359 487.05224609 C948.31770509 489.63784525 950.13564094 492.21373775 951.95410156 494.78955078 C960.4759078 506.89790974 968.65003744 519.17383173 976.48828125 531.73535156 C978.08895272 534.30048183 979.69866116 536.85974788 981.30957031 539.41845703 C995.42290729 561.92919662 1008.72992199 584.90194994 1021.14550781 608.39111328 C1021.63825195 609.32020508 1022.13099609 610.24929688 1022.63867188 611.20654297 C1026.18817763 617.91064567 1029.68345811 624.64146242 1033.14550781 631.39111328 C1033.69319824 632.4578125 1034.24088867 633.52451172 1034.80517578 634.62353516 C1055.89541839 675.85330473 1073.79869043 718.49161179 1089.33166504 762.1071167 C1090.12206213 764.3253145 1090.91624602 766.5421268 1091.7109375 768.75878906 C1124.60932042 860.77498303 1144.36829664 957.49351848 1155.34863281 1122.09423828 C1155.35146019 1123.09717674 1155.35428757 1124.1001152 1155.35720062 1125.13344574 C1155.37207335 1130.46673325 1155.38137144 1135.79999466 1155.38574219 1141.13330078 C1155.39007482 1145.42180126 1155.40377901 1149.71009463 1155.42675781 1153.99853516 C1155.92171401 1248.37749572 1144.08561359 1342.49620524 1104.7666626 1490.41760254 C1104.10833464 1492.50921855 1103.45380998 1494.60200545 1102.79931641 1496.69482422 C1089.46465485 1539.2281453 1073.53247589 1580.78229067 1055.14550781 1621.39111328 C1054.67242188 1622.44024902 1054.19933594 1623.48938477 1053.71191406 1624.5703125 C1040.87771944 1652.93235069 1027.22091911 1681.00534422 1011.56152344 1707.921875 C1009.71786563 1711.13683277 1007.95974727 1714.39442312 1006.20214844 1717.65698242 C995.51827168 1737.4576875 983.56883197 1756.63973921 971.14550781 1775.39111328 C970.61924805 1776.19000977 970.09298828 1776.98890625 969.55078125 1777.81201172 C953.89647689 1801.5686592 937.61941209 1824.93284942 920.14550781 1847.39111328 C918.94804405 1848.96155756 917.75059094 1850.53201035 916.55419922 1852.10327148 C910.74008915 1859.72252208 904.70485501 1867.15553288 898.63378906 1874.57080078 C897.33141403 1876.16373193 896.03484749 1877.76140848 894.73925781 1879.35986328 C886.48406146 1889.52930807 877.95776295 1899.4634209 869.15722656 1909.16455078 C867.29816112 1911.22215719 865.46622423 1913.29958091 863.64550781 1915.39111328 C859.53096296 1920.10550066 855.35904653 1924.76508303 851.14550781 1929.39111328 C850.70229691 1929.87789047 850.259086 1930.36466766 849.80244446 1930.86619568 C839.29851459 1942.35604818 828.32078519 1953.37139098 817.30273438 1964.36425781 C814.75801081 1966.90323082 812.21788035 1969.44674472 809.67900276 1971.99156189 C807.69036472 1973.98383585 805.69932389 1975.97369486 803.70757675 1977.96286011 C802.32162325 1979.34784074 800.93764989 1980.73480205 799.55374146 1982.12182617 C795.1226169 1986.53661704 790.64194457 1990.82519137 785.88717651 1994.89099121 C782.89280487 1997.47008274 780.02794385 2000.18842191 777.14550781 2002.89111328 C772.22024585 2007.48321868 767.2601605 2012.00977741 762.14550781 2016.39111328 C761.15679688 2017.24705078 760.16808594 2018.10298828 759.14941406 2018.98486328 C750.64051595 2026.33581888 741.99833351 2033.51693427 733.29345703 2040.63427734 C731.1702987 2042.37083649 729.05043405 2044.11135834 726.93066406 2045.85205078 C719.71984874 2051.75918211 712.44080958 2057.52470214 704.93798828 2063.05957031 C702.80156142 2064.64661364 700.6785002 2066.25078059 698.55566406 2067.85595703 C688.65290951 2075.33724566 678.67194324 2082.67030003 668.484375 2089.75878906 C665.89877584 2091.56331056 663.32288334 2093.38124641 660.74707031 2095.19970703 C648.63871136 2103.72151326 636.36278937 2111.89564291 623.80126953 2119.73388672 C621.23613926 2121.33455819 618.67687321 2122.94426663 616.11816406 2124.55517578 C593.60742448 2138.66851276 570.63467115 2151.97552746 547.14550781 2164.39111328 C546.21641602 2164.88385742 545.28732422 2165.37660156 544.33007812 2165.88427734 C537.62597543 2169.43378309 530.89515867 2172.92906358 524.14550781 2176.39111328 C522.54545898 2177.21264893 522.54545898 2177.21264893 520.91308594 2178.05078125 C479.68331636 2199.14102386 437.0450093 2217.0442959 393.42950439 2232.57727051 C391.2113066 2233.3676676 388.99449429 2234.16185149 386.77783203 2234.95654297 C294.76163807 2267.85492589 198.04310262 2287.61390211 33.44238281 2298.59423828 C32.43944435 2298.59706566 31.43650589 2298.59989304 30.40317535 2298.60280609 C25.06988785 2298.61767882 19.73662644 2298.62697691 14.40332031 2298.63134766 C10.11481983 2298.63568029 5.82652646 2298.64938447 1.53808594 2298.67236328 C-92.84087463 2299.16731948 -186.95958415 2287.33121906 -334.88098145 2248.01226807 C-336.97259746 2247.35394011 -339.06538435 2246.69941545 -341.15820312 2246.04492188 C-383.69152421 2232.71026032 -425.24566957 2216.77808136 -465.85449219 2198.39111328 C-467.4281958 2197.68148437 -467.4281958 2197.68148437 -469.03369141 2196.95751953 C-497.39572959 2184.12332491 -525.46872313 2170.46652458 -552.38525391 2154.80712891 C-555.60021168 2152.9634711 -558.85780203 2151.20535274 -562.12036133 2149.44775391 C-581.92106641 2138.76387715 -601.10311812 2126.81443744 -619.85449219 2114.39111328 C-620.65338867 2113.86485352 -621.45228516 2113.33859375 -622.27539062 2112.79638672 C-646.03203811 2097.14208236 -669.39622833 2080.86501756 -691.85449219 2063.39111328 C-693.42493647 2062.19364952 -694.99538926 2060.99619641 -696.56665039 2059.79980469 C-704.18590099 2053.98569462 -711.61891179 2047.95046048 -719.03417969 2041.87939453 C-720.62711083 2040.5770195 -722.22478739 2039.28045296 -723.82324219 2037.98486328 C-733.99268697 2029.72966693 -743.92679981 2021.20336842 -753.62792969 2012.40283203 C-755.6855361 2010.54376659 -757.76295982 2008.7118297 -759.85449219 2006.89111328 C-764.56887957 2002.77656843 -769.22846193 1998.604652 -773.85449219 1994.39111328 C-774.34126938 1993.94790237 -774.82804657 1993.50469147 -775.32957458 1993.04804993 C-786.81942709 1982.54412006 -797.83476988 1971.56639065 -808.82763672 1960.54833984 C-811.36660973 1958.00361628 -813.91012363 1955.46348582 -816.4549408 1952.92460823 C-818.44721475 1950.93597019 -820.43707376 1948.94492936 -822.42623901 1946.95318222 C-823.81121965 1945.56722871 -825.19818095 1944.18325536 -826.58520508 1942.79934692 C-830.99999595 1938.36822237 -835.28857027 1933.88755003 -839.35437012 1929.13278198 C-841.93346164 1926.13841034 -844.65180082 1923.27354932 -847.35449219 1920.39111328 C-851.94659758 1915.46585132 -856.47315631 1910.50576597 -860.85449219 1905.39111328 C-862.13839844 1903.90804688 -862.13839844 1903.90804688 -863.44824219 1902.39501953 C-870.79919779 1893.88612142 -877.98031318 1885.24393898 -885.09765625 1876.5390625 C-886.83421539 1874.41590417 -888.57473724 1872.29603952 -890.31542969 1870.17626953 C-896.22256102 1862.96545421 -901.98808105 1855.68641504 -907.52294922 1848.18359375 C-909.10999255 1846.04716689 -910.71415949 1843.92410567 -912.31933594 1841.80126953 C-919.80062457 1831.89851498 -927.13367894 1821.91754871 -934.22216797 1811.72998047 C-936.02668947 1809.14438131 -937.84462532 1806.56848881 -939.66308594 1803.99267578 C-948.18489217 1791.88431683 -956.35902182 1779.60839483 -964.19726562 1767.046875 C-965.7979371 1764.48174473 -967.40764554 1761.92247868 -969.01855469 1759.36376953 C-983.13189166 1736.85302995 -996.43890637 1713.88027662 -1008.85449219 1690.39111328 C-1009.34723633 1689.46202148 -1009.83998047 1688.53292969 -1010.34765625 1687.57568359 C-1013.897162 1680.87158089 -1017.39244249 1674.14076414 -1020.85449219 1667.39111328 C-1021.67602783 1665.79106445 -1021.67602783 1665.79106445 -1022.51416016 1664.15869141 C-1043.97917214 1622.1962771 -1062.0665938 1578.78517994 -1077.85449219 1534.39111328 C-1078.2528125 1533.27446289 -1078.2528125 1533.27446289 -1078.65917969 1532.13525391 C-1108.13181076 1449.452183 -1127.29734694 1363.219825 -1143.24560547 1155.53662109 C-1143.22851553 1150.41553948 -1143.23871365 1145.29492631 -1143.25593567 1140.17386055 C-1143.46631469 1066.0017606 -1135.63537474 992.06349822 -1120.85449219 919.39111328 C-1120.68324829 918.54798584 -1120.51200439 917.7048584 -1120.33557129 916.83618164 C-1103.09982827 832.35550944 -1076.1150734 750.32984078 -999.27050781 590.86035156 C-997.42685 587.64539379 -995.66873164 584.38780344 -993.91113281 581.12524414 C-983.22725605 561.32453906 -971.27781634 542.14248735 -958.85449219 523.39111328 C-958.32823242 522.5922168 -957.80197266 521.79332031 -957.25976562 520.97021484 C-941.60546126 497.21356736 -925.32839647 473.84937714 -907.85449219 451.39111328 C-906.65702842 449.820669 -905.45957532 448.25021621 -904.26318359 446.67895508 C-898.44907352 439.05970448 -892.41383939 431.62669368 -886.34277344 424.21142578 C-885.0403984 422.61849464 -883.74383187 421.02081808 -882.44824219 419.42236328 C-874.19304583 409.25291849 -865.66674733 399.31880566 -856.86621094 389.61767578 C-855.0071455 387.56006937 -853.17520861 385.48264565 -851.35449219 383.39111328 C-847.23994734 378.6767259 -843.06803091 374.01714354 -838.85449219 369.39111328 C-838.41128128 368.90433609 -837.96807037 368.4175589 -837.51142883 367.91603088 C-827.00749897 356.42617838 -816.02976956 345.41083559 -805.01171875 334.41796875 C-802.46699519 331.87899574 -799.92686473 329.33548184 -797.38798714 326.79066467 C-795.3993491 324.79839072 -793.40830826 322.8085317 -791.41656113 320.81936646 C-790.03060762 319.43438582 -788.64663427 318.04742452 -787.26272583 316.66040039 C-782.83160128 312.24560952 -778.35092894 307.9570352 -773.59616089 303.89123535 C-770.60178924 301.31214382 -767.73692822 298.59380465 -764.85449219 295.89111328 C-759.92923023 291.29900789 -754.96914487 286.77244916 -749.85449219 282.39111328 C-748.86578125 281.53517578 -747.87707031 280.67923828 -746.85839844 279.79736328 C-738.34950032 272.44640768 -729.70731788 265.26529229 -721.00244141 258.14794922 C-718.87928308 256.41139008 -716.75941842 254.67086823 -714.63964844 252.93017578 C-707.42883312 247.02304445 -700.14979395 241.25752442 -692.64697266 235.72265625 C-690.51054579 234.13561292 -688.38748458 232.53144597 -686.26464844 230.92626953 C-676.36189388 223.4449809 -666.38092762 216.11192653 -656.19335938 209.0234375 C-653.60776022 207.218916 -651.03186771 205.40098015 -648.45605469 203.58251953 C-636.34769573 195.0607133 -624.07177374 186.88658365 -611.51025391 179.04833984 C-608.94512364 177.44766837 -606.38585759 175.83795993 -603.82714844 174.22705078 C-581.31640885 160.11371381 -558.34365552 146.8066991 -534.85449219 134.39111328 C-533.92540039 133.89836914 -532.99630859 133.405625 -532.0390625 132.89794922 C-525.3349598 129.34844347 -518.60414305 125.85316298 -511.85449219 122.39111328 C-510.78779297 121.84342285 -509.72109375 121.29573242 -508.62207031 120.73144531 C-466.65965601 99.26643333 -423.24855885 81.17901167 -378.85449219 65.39111328 C-378.11005859 65.12556641 -377.365625 64.86001953 -376.59863281 64.58642578 C-293.91556191 35.11379471 -207.6832039 15.94825853 0 0 Z " fill="#000000" transform="translate(1242.8544921875,98.60888671875)" />
+        <path d="M0 0 C0.33 0 0.66 0 1 0 C1.3258563 12.25697853 1.57386664 24.51291039 1.72537041 36.77335453 C1.79812671 42.46806475 1.8966192 48.15979063 2.05615234 53.8527832 C2.20943804 59.35793804 2.29221195 64.86024304 2.3282814 70.3673687 C2.35394723 72.45711548 2.40407064 74.54672397 2.48022079 76.63524055 C2.83312938 86.72504697 3.00689447 94.78582024 -3.91837883 102.67581081 C-6.31539935 105.11001659 -8.79841454 107.3948004 -11.40101242 109.60693169 C-13.40344702 111.35149069 -15.11599575 113.27286665 -16.8125 115.3125 C-21.55705011 120.8180807 -26.45737365 126.18433994 -31.328125 131.578125 C-35.29010879 135.97134512 -39.22018348 140.3870655 -43.1015625 144.8515625 C-46.30362213 148.47529254 -49.58734141 152.02515323 -52.86328125 155.58203125 C-56.60878743 159.82054738 -57.25001695 161.99115223 -57.25020635 167.5773052 C-57.25296003 168.25311896 -57.2557137 168.92893272 -57.25855083 169.62522568 C-57.26539288 171.91080095 -57.25787695 174.19610926 -57.25053978 176.48167992 C-57.25251198 178.13550868 -57.25536295 179.7893366 -57.25901759 181.4431625 C-57.26656688 186.0212076 -57.26156438 190.59916879 -57.25466615 195.1772118 C-57.2493771 200.14527195 -57.2556694 205.11331896 -57.26055682 210.08137763 C-57.26753977 218.79986251 -57.26712265 227.51832298 -57.26195335 236.23680878 C-57.2543258 249.201688 -57.25816125 262.1665457 -57.26457582 275.13142469 C-57.27479606 296.27072519 -57.27709944 317.41001884 -57.27462719 338.54932133 C-57.27205383 360.83121136 -57.27511311 383.11308996 -57.2861824 405.39497757 C-57.28668192 406.40143824 -57.28668192 406.40143824 -57.28719152 407.42823145 C-57.29127692 415.61083162 -57.29562848 423.79343164 -57.30005794 431.97603162 C-57.30679704 444.45814768 -57.31296532 456.94026403 -57.3190922 469.4223804 C-57.3197801 470.82374733 -57.32046935 472.22511426 -57.32115994 473.62648118 C-57.33743097 506.66719804 -57.34861768 539.70791594 -57.35778913 572.74863546 C-57.35839859 574.94146588 -57.35901333 577.1342963 -57.35962884 579.32712671 C-57.36907702 613.093776 -57.37592764 646.86042465 -57.37835693 680.6270752 C-57.37846444 682.09364156 -57.37857208 683.56020792 -57.37867985 685.02677428 C-57.37916135 691.61657767 -57.37962539 698.20638106 -57.3800873 704.79618444 C-57.38029244 707.71908565 -57.38049923 710.64198685 -57.38070582 713.56488805 C-57.38085934 715.75480647 -57.38100907 717.94472489 -57.38115862 720.13464331 C-57.38344553 753.12590161 -57.38873801 786.11715386 -57.40629005 819.10840797 C-57.40684139 820.14874547 -57.40684139 820.14874547 -57.40740386 821.21009988 C-57.41513735 835.7522 -57.42366487 850.29429952 -57.43326016 864.83639853 C-57.43774807 871.64655384 -57.44203041 878.45670926 -57.44618607 885.26686478 C-57.44659819 885.93736567 -57.44701031 886.60786657 -57.44743492 887.29868567 C-57.46059957 908.8942052 -57.46016736 930.48969862 -57.45228107 952.08521996 C-57.44414371 974.44607088 -57.44961229 996.80687653 -57.47119068 1019.16771917 C-57.48316993 1032.06027912 -57.48390657 1044.95272746 -57.46869816 1057.84528459 C-57.45962768 1066.45559734 -57.46500404 1075.06582255 -57.48214063 1083.67612282 C-57.49148684 1088.5832832 -57.49450728 1093.49022235 -57.47987001 1098.39737479 C-57.46666217 1102.86529207 -57.47196986 1107.33279732 -57.49178335 1111.80068669 C-57.49569016 1113.40341879 -57.49296374 1115.00618503 -57.48262475 1116.60888854 C-57.35608289 1137.70582117 -64.70329432 1152.11719219 -79 1167 C-80.21898971 1168.36556162 -81.4289182 1169.73932948 -82.625 1171.125 C-87.44612004 1176.6807669 -92.39831813 1182.11894289 -97.328125 1187.578125 C-102.92444996 1193.78357377 -108.45516149 1200.03823317 -113.90234375 1206.375 C-119.79031508 1213.21367981 -125.74653155 1219.96397863 -131.89453125 1226.5703125 C-135.09527793 1230.01068727 -138.22521765 1233.49861699 -141.30078125 1237.05078125 C-144.81406038 1241.08095661 -148.41746334 1245.03146612 -152 1249 C-153.50028679 1250.66640851 -155.00028872 1252.33307353 -156.5 1254 C-158.7717129 1256.52500493 -161.04435414 1259.04913304 -163.3203125 1261.5703125 C-166.71872932 1265.33737115 -170.1081661 1269.10915586 -173.4375 1272.9375 C-177.09178862 1277.13442081 -180.84744973 1281.2365276 -184.59765625 1285.34765625 C-186.56941844 1287.52460996 -188.51365337 1289.71838674 -190.4375 1291.9375 C-193.3988351 1295.3468858 -196.44152486 1298.6779431 -199.5 1302 C-203.14414329 1305.95862186 -206.73913717 1309.9517676 -210.265625 1314.015625 C-214.55679952 1318.9253472 -218.95802108 1323.73874818 -223.328125 1328.578125 C-224.08609375 1329.41859375 -224.8440625 1330.2590625 -225.625 1331.125 C-226.36105469 1331.94097656 -227.09710937 1332.75695313 -227.85546875 1333.59765625 C-230.47457853 1336.53163168 -233.04080756 1339.50893938 -235.58984375 1342.50390625 C-237 1344 -237 1344 -239 1345 C-239.20898931 1332.78657817 -239.36867687 1320.57358509 -239.46630955 1308.35873604 C-239.51318119 1302.68610378 -239.57670381 1297.01469919 -239.67895508 1291.34277344 C-239.77710504 1285.86374822 -239.83063298 1280.3858999 -239.85389519 1274.90606308 C-239.87046122 1272.82082475 -239.90281268 1270.73564728 -239.95157051 1268.65091324 C-240.36413177 1250.27175581 -240.36413177 1250.27175581 -234.65991211 1243.88623047 C-233.13493579 1242.55758901 -231.58335121 1241.25850699 -230 1240 C-228.82663992 1238.71204953 -227.67523333 1237.403177 -226.5625 1236.0625 C-222.90821138 1231.86557919 -219.15255027 1227.7634724 -215.40234375 1223.65234375 C-213.43058156 1221.47539004 -211.48634663 1219.28161326 -209.5625 1217.0625 C-206.6011649 1213.6531142 -203.55847514 1210.3220569 -200.5 1207 C-196.89311242 1203.08184891 -193.29215328 1199.16473926 -189.87260986 1195.08063034 C-188 1193 -188 1193 -185.7407495 1191.00919019 C-180.60685861 1186.2055303 -178.39831518 1182.62652737 -177.88040417 1175.5468933 C-177.80435314 1172.57556156 -177.84156368 1169.61293522 -177.88812542 1166.64136791 C-177.88096661 1164.9776556 -177.86985671 1163.31395647 -177.85517213 1161.65029356 C-177.82623055 1157.07689049 -177.85329945 1152.50527388 -177.8894705 1147.93198564 C-177.91885938 1142.95739133 -177.89589496 1137.9829944 -177.8795374 1133.00837833 C-177.8580615 1124.28918281 -177.86994053 1115.57052719 -177.90360832 1106.85137749 C-177.95349571 1093.88574097 -177.95174203 1080.92047202 -177.93919193 1067.95476389 C-177.91946168 1046.14135583 -177.94100236 1024.32817019 -177.98549461 1002.51480675 C-178.02938979 980.90607866 -178.05286417 959.297474 -178.0496769 937.68869972 C-178.04958477 937.01727402 -178.04949264 936.34584831 -178.04939773 935.65407638 C-178.04843351 928.83680899 -178.0470405 922.01954173 -178.04536432 915.20227448 C-178.04179729 900.6408175 -178.0411766 886.07936069 -178.04189777 871.51790333 C-178.04192903 870.82362932 -178.04196028 870.12935532 -178.04199249 869.41404271 C-178.04368236 836.37444194 -178.07504169 803.334882 -178.11113179 770.29530344 C-178.11512331 766.64072638 -178.11909242 762.98614929 -178.12306521 759.33157221 C-178.12385304 758.60729076 -178.12464086 757.8830093 -178.12545256 757.13677992 C-178.13422017 749.07531752 -178.14294439 741.01385508 -178.15161133 732.95239258 C-178.15278613 731.86245334 -178.15278613 731.86245334 -178.15398467 730.75049513 C-178.19032677 696.99324081 -178.21441269 663.23598256 -178.23338589 629.47871434 C-178.23461882 627.28792416 -178.23586344 625.09713398 -178.23710985 622.9063438 C-178.25582454 589.90172223 -178.26940751 556.89710273 -178.27413654 523.89247608 C-178.27434308 522.49145676 -178.27454988 521.09043744 -178.27475694 519.68941812 C-178.27657983 507.21265891 -178.27823866 494.73589969 -178.27887575 482.25914035 C-178.27930299 474.07700937 -178.28003154 465.89487848 -178.28124428 457.71274757 C-178.28139301 456.70672528 -178.28139301 456.70672528 -178.28154475 455.68037931 C-178.28506367 433.41410045 -178.30709782 411.14787898 -178.33871995 388.88162366 C-178.36947739 367.19092085 -178.38763085 345.50024324 -178.39221694 323.80951866 C-178.39547737 310.91912814 -178.41029642 298.02886534 -178.4412594 285.13851105 C-178.46087485 276.52992025 -178.46608162 267.92139896 -178.45959021 259.31278846 C-178.45633096 254.40671152 -178.45946299 249.50086707 -178.48037853 244.59482857 C-178.49931853 240.12801463 -178.49969277 235.66159153 -178.48552736 231.19476342 C-178.48366442 229.5924304 -178.48846454 227.9900715 -178.50091128 226.38778574 C-178.64073344 207.27498068 -173.18111235 192.82075039 -160 179 C-158.84609155 177.69459372 -157.69968763 176.38249794 -156.5625 175.0625 C-152.90942044 170.86696779 -149.15494451 166.76626447 -145.40625 162.65625 C-143.41351047 160.45647259 -141.4466186 158.24044782 -139.5 156 C-135.87055059 151.82270917 -132.1352098 147.74462761 -128.40625 143.65625 C-126.41351047 141.45647259 -124.4466186 139.24044782 -122.5 137 C-118.87055059 132.82270917 -115.1352098 128.74462761 -111.40625 124.65625 C-109.41351047 122.45647259 -107.4466186 120.24044782 -105.5 118 C-101.87055059 113.82270917 -98.1352098 109.74462761 -94.40625 105.65625 C-92.41351047 103.45647259 -90.4466186 101.24044782 -88.5 99 C-84.86934292 94.82131921 -81.13281424 90.74183696 -77.40234375 86.65234375 C-75.43058156 84.47539004 -73.48634663 82.28161326 -71.5625 80.0625 C-66.34918659 74.06780004 -60.92452397 68.26121235 -55.54296875 62.41796875 C-50.54704044 56.9911248 -45.56932168 51.55607546 -40.734375 45.984375 C-36.44320048 41.0746528 -32.04197892 36.26125182 -27.671875 31.421875 C-24.27655062 27.6569915 -20.88941658 23.88806449 -17.5625 20.0625 C-13.89332038 15.844658 -10.11458986 11.72941983 -6.33203125 7.61328125 C-4.75424826 5.84521287 -3.23108562 4.02711531 -1.76171875 2.16796875 C-0.88966797 1.09482422 -0.88966797 1.09482422 0 0 Z M-10 26 C-11.36335558 27.43030607 -12.68948853 28.89612421 -14 30.375 C-15.21816406 31.74398438 -15.21816406 31.74398438 -16.4609375 33.140625 C-17.29882812 34.08421875 -18.13671875 35.0278125 -19 36 C-20.54049673 37.7093884 -22.08212209 39.41776052 -23.625 41.125 C-26.2525288 44.04296376 -28.86079793 46.97459434 -31.4375 49.9375 C-35.09057956 54.13303221 -38.84505549 58.23373553 -42.59375 62.34375 C-44.58648953 64.54352741 -46.5533814 66.75955218 -48.5 69 C-52.13307247 73.18146076 -55.87197865 77.26374272 -59.60546875 81.35546875 C-61.53535094 83.48683945 -63.43422944 85.63594329 -65.3125 87.8125 C-68.62101673 91.62397414 -72.05782216 95.30977219 -75.5 99 C-79.51518498 103.3048531 -83.48727549 107.63058985 -87.3359375 112.0859375 C-91.59232323 116.98178024 -95.98038447 121.76351301 -100.328125 126.578125 C-103.70385022 130.32127609 -107.07137435 134.06796472 -110.375 137.875 C-113.82716078 141.84097076 -117.38750881 145.70517646 -120.94824219 149.57324219 C-124.10697965 153.0102442 -127.20638336 156.49021321 -130.265625 160.015625 C-134.55679952 164.9253472 -138.95802108 169.73874818 -143.328125 174.578125 C-144.84654065 176.26181038 -146.36221749 177.94797021 -147.875 179.63671875 C-149.19747834 181.1074897 -150.52923854 182.57003401 -151.875 184.01953125 C-164.22302595 197.55274719 -168.62155278 210.45807079 -168.48546219 228.55811596 C-168.48770439 230.23131089 -168.49170744 231.90450421 -168.49730152 233.57769129 C-168.50759834 238.17227711 -168.49302203 242.76649708 -168.47439309 247.36104419 C-168.45857955 252.36075137 -168.46613967 257.36043198 -168.47077537 262.36015445 C-168.47572401 271.12168812 -168.46594145 279.88310875 -168.4465313 288.6446209 C-168.41778785 301.67306628 -168.4121348 314.70144964 -168.41157247 327.72992313 C-168.41017836 348.97546355 -168.3929697 370.22096262 -168.36613696 391.46648443 C-168.33793506 413.84752754 -168.32105048 436.22853659 -168.3201828 458.60959816 C-168.32015601 459.2841244 -168.32012922 459.95865064 -168.32010162 460.65361706 C-168.31982363 468.87974117 -168.32007862 477.10586522 -168.32048968 485.33198932 C-168.32108101 497.87848825 -168.32053013 510.42498721 -168.31989644 522.97148614 C-168.31982538 524.37990108 -168.31975701 525.78831602 -168.31969134 527.19673097 C-168.31812127 560.38254248 -168.30638152 593.56834769 -168.29059624 626.75415526 C-168.28955052 628.95587133 -168.28851537 631.15758741 -168.28748177 633.35930349 C-168.27149807 667.2791736 -168.25030221 701.1990358 -168.22027588 735.11889648 C-168.21897479 736.5932234 -168.21767397 738.06755033 -168.21637342 739.54187725 C-168.2105237 746.16699036 -168.20463922 752.79210344 -168.1987506 759.41721651 C-168.19613909 762.35595316 -168.19353091 765.2946898 -168.19092232 768.23342645 C-168.18896535 770.43521789 -168.1870008 772.63700933 -168.18503589 774.83880077 C-168.15550883 808.00155036 -168.13198844 841.16428204 -168.13303757 874.32704639 C-168.13305674 875.02391511 -168.13307592 875.72078383 -168.13309567 876.43876978 C-168.13355147 891.04864367 -168.13559781 905.65851676 -168.13978422 920.26839006 C-168.14173328 927.10954301 -168.14327056 933.95069603 -168.14455414 940.79184914 C-168.14468647 941.46539241 -168.14481881 942.13893568 -168.14495515 942.83288935 C-168.14900087 964.5363667 -168.12579186 986.23971193 -168.08767956 1007.94315318 C-168.04829581 1030.40286372 -168.03607946 1052.86243967 -168.05621156 1075.32218059 C-168.06689545 1088.27596146 -168.05496995 1101.22927377 -168.0112344 1114.18298756 C-167.98421578 1122.82742153 -167.98598394 1131.471535 -168.01146171 1140.11597297 C-168.02514873 1145.04679017 -168.02597097 1149.97670988 -167.99169484 1154.90744682 C-167.96076351 1159.39105783 -167.9664703 1163.87305459 -168.0017061 1168.35662019 C-168.00790992 1169.9704834 -168.00062883 1171.58446757 -167.97838777 1173.19818945 C-167.82357054 1185.20515296 -167.82357054 1185.20515296 -170.72832343 1189.63685695 C-172.71706034 1191.63834411 -174.75720485 1193.29613659 -177 1195 C-178.15418786 1196.24438448 -179.28380568 1197.51252411 -180.375 1198.8125 C-183.19717497 1202.09215082 -186.08243085 1205.30477699 -189 1208.5 C-191.86471815 1211.64083556 -194.71185902 1214.79100756 -197.5 1218 C-201.13065708 1222.17868079 -204.86718576 1226.25816304 -208.59765625 1230.34765625 C-211.10138223 1233.11193258 -213.56593359 1235.90163294 -215.96708679 1238.75543213 C-218 1241 -218 1241 -220.71638489 1243.48065186 C-226.21221882 1248.61364358 -229.6664172 1252.51602426 -230.2487793 1260.32910156 C-230.24705125 1263.03386831 -230.18918201 1265.69280663 -230.07421875 1268.390625 C-230.05364484 1269.83072906 -230.03801398 1271.2709113 -230.02705383 1272.71112061 C-229.98549303 1276.46149723 -229.87787391 1280.20701883 -229.75531006 1283.95550537 C-229.64179595 1287.79649176 -229.59233791 1291.63828059 -229.53710938 1295.48046875 C-229.41992175 1302.98916834 -229.23277226 1310.49389844 -229 1318 C-228.04714111 1317.21391357 -227.09428223 1316.42782715 -226.11254883 1315.61791992 C-225.5765657 1315.17574631 -225.04058258 1314.73357269 -224.48835754 1314.27799988 C-222.70932602 1312.75040856 -221.19446854 1311.10762273 -219.6875 1309.3125 C-217.04005154 1306.21120323 -214.35737174 1303.15199269 -211.625 1300.125 C-210.86703125 1299.28453125 -210.1090625 1298.4440625 -209.328125 1297.578125 C-207.77604167 1295.859375 -206.22395833 1294.140625 -204.671875 1292.421875 C-201.27655062 1288.6569915 -197.88941658 1284.88806449 -194.5625 1281.0625 C-190.90942044 1276.86696779 -187.15494451 1272.76626447 -183.40625 1268.65625 C-181.41351047 1266.45647259 -179.4466186 1264.24044782 -177.5 1262 C-173.86934292 1257.82131921 -170.13281424 1253.74183696 -166.40234375 1249.65234375 C-164.43058156 1247.47539004 -162.48634663 1245.28161326 -160.5625 1243.0625 C-157.6011649 1239.6531142 -154.55847514 1236.3220569 -151.5 1233 C-147.85144546 1229.03658621 -144.25118856 1225.03949177 -140.72265625 1220.96875 C-138.77840864 1218.74675273 -136.79663036 1216.56144777 -134.8125 1214.375 C-131.19632582 1210.37269197 -127.67992801 1206.29716812 -124.1875 1202.1875 C-119.63142381 1196.83239409 -114.94485437 1191.62291023 -110.15356445 1186.4777832 C-106.95948121 1183.04729664 -103.83950538 1179.56811109 -100.7734375 1176.0234375 C-98.54861908 1173.48498829 -96.27496681 1170.99358224 -94 1168.5 C-92.33308269 1166.66689456 -90.66639823 1164.83357734 -89 1163 C-88.36835937 1162.3090625 -87.73671875 1161.618125 -87.0859375 1160.90625 C-72.88315284 1145.08214289 -67.67562924 1131.9601967 -67.76342678 1110.87908363 C-67.76296994 1109.21681486 -67.76162992 1107.55454613 -67.75948831 1105.89227867 C-67.75613059 1101.31411994 -67.76525617 1096.73605735 -67.77634066 1092.15791394 C-67.78615334 1087.18109903 -67.78425634 1082.20428672 -67.7837792 1077.22746408 C-67.78451532 1068.50143385 -67.7925602 1059.77543423 -67.80533791 1051.04941368 C-67.82424638 1038.07357085 -67.83154623 1025.09774004 -67.83604703 1012.12188511 C-67.8430563 992.29995075 -67.85585208 972.47802637 -67.87319346 952.65609852 C-67.9015927 920.15436638 -67.90966066 887.65265894 -67.90853723 855.15091538 C-67.90829871 848.24037667 -67.90825581 841.32983795 -67.90823404 834.41929924 C-67.90822515 831.63284093 -67.90821171 828.84638262 -67.9081979 826.05992431 C-67.908191 824.66239364 -67.90818451 823.26486296 -67.90817842 821.86733229 C-67.90816214 818.36215615 -67.90813759 814.85698002 -67.90809696 811.35180388 C-67.90772215 778.99548317 -67.91013939 746.63916322 -67.91587308 714.282843 C-67.91625986 712.08929621 -67.91663571 709.89574941 -67.91701056 707.70220262 C-67.92286408 673.91447601 -67.93557019 640.12676524 -67.96496582 606.33905029 C-67.96559709 605.61222447 -67.96622836 604.88539865 -67.96687876 604.1365478 C-67.97708102 592.4171512 -67.98766849 580.69775495 -67.99833309 568.97835877 C-68.02904825 535.22235728 -68.05439844 501.46638107 -68.04940891 467.71036339 C-68.04930903 467.01626412 -68.04920915 466.32216485 -68.04910625 465.60703227 C-68.04694016 451.0545741 -68.04286073 436.5021172 -68.03631479 421.94966035 C-68.03325441 415.13510466 -68.03061046 408.32054884 -68.02820015 401.50599289 C-68.02795516 400.835065 -68.02771017 400.16413711 -68.02745776 399.47287807 C-68.01977114 377.85776724 -68.04156096 356.24280845 -68.07912998 334.62773253 C-68.11791398 312.2544426 -68.12547429 289.88134951 -68.09631621 267.50804092 C-68.08051814 254.60575781 -68.09001037 241.70406117 -68.13528956 228.80184483 C-68.16306353 220.1890668 -68.15835888 211.57670623 -68.12701844 202.96394136 C-68.11009009 198.0527336 -68.10752828 193.14265927 -68.14454591 188.23153658 C-68.17795254 183.76325273 -68.1699384 179.29702908 -68.12891653 174.82882614 C-68.1214264 173.22280857 -68.12901294 171.61663157 -68.15355147 170.010784 C-68.26553105 162.16367645 -68.05438168 156.28330872 -62.59275633 150.15688837 C-61.08785701 148.74304279 -59.56003109 147.35276912 -58 146 C-57.14148437 145.04867187 -56.28296875 144.09734375 -55.3984375 143.1171875 C-54.73070312 142.37726563 -54.06296875 141.63734375 -53.375 140.875 C-50.7474712 137.95703624 -48.13920207 135.02540566 -45.5625 132.0625 C-41.90942044 127.86696779 -38.15494451 123.76626447 -34.40625 119.65625 C-31.8514996 116.83607098 -29.34685269 113.97760192 -26.85546875 111.1015625 C-23.74566894 107.57930503 -20.53374315 104.1496265 -17.33203125 100.7109375 C-11.74187957 94.21250322 -8.73641999 88.4684623 -8.77294922 79.81103516 C-8.77310028 78.61024323 -8.77325134 77.40945129 -8.77340698 76.17227173 C-8.78372955 74.89081268 -8.79405212 73.60935364 -8.8046875 72.2890625 C-8.8084221 70.95242526 -8.81126696 69.61578526 -8.81326294 68.27914429 C-8.82086423 64.77744868 -8.84048212 61.2759215 -8.8626709 57.77429199 C-8.88320526 54.19460325 -8.89228082 50.61488704 -8.90234375 47.03515625 C-8.92373171 40.02336873 -8.95782484 33.01169247 -9 26 C-9.33 26 -9.66 26 -10 26 Z " fill="#F7F7F7" transform="translate(1544,238)" />
+        <path d="M0 0 C4.23259518 1.06745802 6.92196862 3.34342142 9.6640625 6.671875 C11.40243102 10.14861205 11.11842569 13.87058298 10.6640625 17.671875 C8.29698384 22.58811528 5.80365757 24.85790027 0.6640625 26.671875 C-4.6053711 27.23645717 -7.78378295 26.33655084 -12.3359375 23.671875 C-12.60106644 24.26264832 -12.86619537 24.85342163 -13.13935852 25.46209717 C-14.37362448 27.7414733 -15.64216596 29.21374523 -17.48120117 31.02832031 C-18.11914108 31.66288147 -18.75708099 32.29744263 -19.41435242 32.95123291 C-20.10390518 33.62732605 -20.79345795 34.30341919 -21.50390625 35 C-22.21694412 35.7078363 -22.92998199 36.41567261 -23.66462708 37.1449585 C-25.94619944 39.40873272 -28.23432092 41.66573171 -30.5234375 43.921875 C-32.79387625 46.16454006 -35.06278679 48.40869659 -37.32868958 50.65594482 C-38.73722781 52.05239901 -40.14842876 53.44617467 -41.56278992 54.83673096 C-45.47905157 58.7138665 -49.17512764 62.71004873 -52.77354431 66.88339233 C-54.69985941 69.08845901 -56.72893135 71.16236668 -58.81640625 73.21484375 C-59.58791016 73.97861328 -60.35941406 74.74238281 -61.15429688 75.52929688 C-61.93611328 76.29822266 -62.71792969 77.06714844 -63.5234375 77.859375 C-70.29148145 84.43860997 -70.29148145 84.43860997 -76.3359375 91.671875 C-76.9959375 91.341875 -77.6559375 91.011875 -78.3359375 90.671875 C-72.35920845 84.10171186 -66.34511754 77.60047276 -60.0234375 71.359375 C-56.25376044 67.63762772 -52.67291549 63.83302557 -49.2421875 59.796875 C-46.71343289 56.97793544 -44.02947504 54.33248924 -41.3359375 51.671875 C-37.48600843 47.86894644 -33.82062906 44.0160787 -30.33203125 39.875 C-28.62756063 37.99374476 -26.88200454 36.23225091 -25.05859375 34.46875 C-24.17288696 33.60817993 -24.17288696 33.60817993 -23.26928711 32.73022461 C-22.08472838 31.58660648 -20.89177077 30.45160983 -19.68969727 29.32641602 C-16.57495704 26.31438473 -14.44811404 24.24707537 -14.3359375 19.671875 C-14.8309375 18.681875 -14.8309375 18.681875 -15.3359375 17.671875 C-16.08829962 13.5509825 -16.04141401 10.0945469 -14.16015625 6.30078125 C-10.18499637 0.97843115 -6.59801024 -0.47258476 0 0 Z " fill="#040404" transform="translate(926.3359375,2036.328125)" />
+        <path d="M0 0 C0.99 0.33 1.98 0.66 3 1 C2.12786865 1.86689453 1.2557373 2.73378906 0.35717773 3.62695312 C-2.90877402 6.87466792 -6.17130299 10.12580327 -9.43286133 13.37792969 C-10.83917075 14.77924133 -12.24638022 16.17965036 -13.65454102 17.57910156 C-15.69009656 19.60239038 -17.72228531 21.62901128 -19.75390625 23.65625 C-20.37399063 24.2711731 -20.99407501 24.88609619 -21.63294983 25.51965332 C-25.3938409 29.28007103 -28.93991849 33.16969482 -32.41700745 37.19338989 C-34.35246223 39.40225194 -36.38662834 41.48423289 -38.48046875 43.54296875 C-39.63772461 44.68862305 -39.63772461 44.68862305 -40.81835938 45.85742188 C-41.60017578 46.62634766 -42.38199219 47.39527344 -43.1875 48.1875 C-49.95554395 54.76673497 -49.95554395 54.76673497 -56 62 C-56.66 61.67 -57.32 61.34 -58 61 C-52.02327095 54.42983686 -46.00918004 47.92859776 -39.6875 41.6875 C-35.91782294 37.96575272 -32.33697799 34.16115057 -28.90625 30.125 C-25.88205527 26.75376653 -22.63236178 23.61229587 -19.41113281 20.43066406 C-15.99864704 17.04394911 -12.78456744 13.55359037 -9.66796875 9.890625 C-6.61481008 6.42990183 -3.30030819 3.22315813 0 0 Z " fill="#181818" transform="translate(906,2066)" />
+        <path d="M0 0 C0.66 0 1.32 0 2 0 C0.43167514 3.79974848 -1.9520803 6.16765382 -4.8671875 9.02734375 C-5.3431839 9.49813858 -5.8191803 9.96893341 -6.30960083 10.45399475 C-7.82670321 11.95335315 -9.35032574 13.44584509 -10.875 14.9375 C-12.39167448 16.42640982 -13.90680723 17.91680727 -15.41897583 19.41029358 C-16.79539529 20.76897664 -18.17662159 22.12278503 -19.55810547 23.47631836 C-21.88069019 25.87669412 -23.96154256 28.3566441 -26 31 C-26.66 30.67 -27.32 30.34 -28 30 C-21.49533053 22.84947682 -14.93327107 15.79788464 -8.01074219 9.04785156 C-5.76311451 6.8404984 -3.72171192 4.64332091 -1.78125 2.15625 C-1.1934375 1.4446875 -0.605625 0.733125 0 0 Z " fill="#3D3D3D" transform="translate(876,2097)" />
       </symbol>
     </defs>
   </svg>
 
   <div class="header">
-
     <button id="refresh-btn" class="refresh-btn" onclick="refreshData()" aria-label="更新" title="データを更新">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="23 4 23 10 17 10"></polyline>
-      <polyline points="1 20 1 14 7 14"></polyline>
-      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-    </svg>
-  </button>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"></polyline>
+        <polyline points="1 20 1 14 7 14"></polyline>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    </button>
     <div class="logo">SSS Education</div>
     <h1><span id="student-name">...</span> さんの記録</h1>
   </div>
-
 
   <!-- ローディング画面 -->
   <div id="loading">
@@ -963,14 +452,12 @@
         </div>
       </div>
       <div class="loading-text">SSS Education</div>
-      <div style="font-size:12px; color:var(--text-gray); margin-top:10px; letter-spacing: 2px;">SYSTEM IS GATHERING
-        DATA...</div>
+      <div style="font-size:12px; color:var(--text-gray); margin-top:10px; letter-spacing: 2px;">SYSTEM IS GATHERING DATA...</div>
     </div>
   </div>
 
   <!-- エラー画面（必要時のみ表示） -->
-  <div id="error-screen"
-    style="display:none; min-height:60vh; display:none; justify-content:center; align-items:center; padding-top:60px;">
+  <div id="error-screen" style="display:none; min-height:60vh; display:none; justify-content:center; align-items:center; padding-top:60px;">
     <div class="error-box">
       <div class="err-title">⚠ ERROR</div>
       <div class="err-msg" id="err-message">データの取得に失敗しました。</div>
@@ -983,7 +470,6 @@
     <div class="quote-box" id="quote-text"></div>
 
     <div class="countdown-grid" id="box-countdown">
-
       <div class="cd-card">
         <div class="cd-title">共通テストまで</div>
         <div class="cd-days" id="cd-common">--<span>日</span></div>
@@ -1009,6 +495,7 @@
         <p class="qr-id" id="qr-id-text">---</p>
       </div>
     </details>
+
     <div class="settings-trigger" onclick="openModal()">⚙️ 目標を自分専用に設定する</div>
 
     <div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
@@ -1120,434 +607,454 @@
       </table>
     </div>
   </div>
-<script>
-  // =====================================================================
-  // 設定（デプロイ後にAPIエンドポイントURLを書き換えてください）
-  // =====================================================================
-  const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyclB58dLRD1kawXot4nE9cW0Lq3tMnnFPZ_29NbOhp9StL693615lPrVW_palugJp9_A/exec';
 
-  // 入試カウントダウンの目標日（年度更新時はここを書き換えてください）
-  const TARGET_COMMON   = '2027/01/16';
-  const TARGET_NATIONAL = '2027/02/25';
+  <script>
+    // =====================================================================
+    // 設定（デプロイ後にAPIエンドポイントURLを書き換えてください）
+    // =====================================================================
+    const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyclB58dLRD1kawXot4nE9cW0Lq3tMnnFPZ_29NbOhp9StL693615lPrVW_palugJp9_A/exec';
 
-  // =====================================================================
-  // 認証トークン取得（URLクエリ ?token=xxx から）
-  // =====================================================================
-  const studentToken = new URLSearchParams(location.search).get('token');
+    // 入試カウントダウンの目標日（年度更新時はここを書き換えてください）
+    const TARGET_COMMON   = '2027/01/16';
+    const TARGET_NATIONAL = '2027/02/25';
 
-  // チャートデータ＆Chart.jsインスタンス管理
-  let chartData = {};
-  let chartInstances = {};
+    // =====================================================================
+    // 認証トークン取得（URLクエリ ?token=xxx から）
+    // =====================================================================
+    const studentToken = new URLSearchParams(location.search).get('token');
 
-  // =====================================================================
-  // API通信ラッパー
-  // =====================================================================
+    // チャートデータ＆Chart.jsインスタンス管理
+    let chartData = {};
+    let chartInstances = {};
 
-  async function apiGet(params) {
-    const query = new URLSearchParams(params).toString();
-    const url = `${API_ENDPOINT}?${query}`;
-    const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-    if (!res.ok) throw new Error(`通信エラー (HTTP ${res.status})`);
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'サーバー側でエラーが発生しました');
-    return json;
-  }
+    // =====================================================================
+    // API通信ラッパー
+    // =====================================================================
 
-  async function apiPost(payload) {
-    const res = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+    /**
+     * GETリクエストでJSONを取得
+     * @param {Object} params - クエリパラメータのオブジェクト
+     */
+    async function apiGet(params) {
+      const query = new URLSearchParams(params).toString();
+      const url = `${API_ENDPOINT}?${query}`;
+      const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+      if (!res.ok) throw new Error(`通信エラー (HTTP ${res.status})`);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'サーバー側でエラーが発生しました');
+      return json;
+    }
+
+    /**
+     * POSTリクエストでJSONを送信／受信
+     * GASのCORSプリフライトを避けるため Content-Type: text/plain を使用
+     * @param {Object} payload - 送信するJSONオブジェクト
+     */
+    async function apiPost(payload) {
+      const res = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error(`通信エラー (HTTP ${res.status})`);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'サーバー側でエラーが発生しました');
+      return json;
+    }
+
+    // 統計データ取得
+    function fetchStats(token) {
+      return apiGet({ action: 'stats', token }).then(j => j.data);
+    }
+
+    // 設定保存
+    function saveStudentSettings(token, examName, examDate) {
+      return apiPost({ action: 'saveSettings', token, examName, examDate }).then(j => j.message);
+    }
+
+    // =====================================================================
+    // UI制御
+    // =====================================================================
+
+    function showLoading() {
+      document.getElementById('loading').style.display = 'flex';
+      document.getElementById('content').style.display = 'none';
+      document.getElementById('error-screen').style.display = 'none';
+    }
+
+    function showContent() {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error-screen').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+    }
+
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'none';
+      const errBox = document.getElementById('error-screen');
+      errBox.style.display = 'flex';
+      document.getElementById('err-message').textContent = message || 'データの取得に失敗しました。';
+    }
+
+    // =====================================================================
+    // 初期化
+    // =====================================================================
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!studentToken) {
+        showError('URLが正しくありません。管理者から配布されたURLからアクセスしてください。');
+        return;
+      }
+      try {
+        const data = await fetchStats(studentToken);
+        showStats(data);
+      } catch (err) {
+        console.error(err);
+        showError(err.message || '通信エラーが発生しました。');
+      }
     });
-    if (!res.ok) throw new Error(`通信エラー (HTTP ${res.status})`);
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || 'サーバー側でエラーが発生しました');
-    return json;
-  }
 
-  function fetchStats(token) {
-    return apiGet({ action: 'stats', token }).then(j => j.data);
-  }
+    // =====================================================================
+    // データ反映
+    // =====================================================================
 
-  function saveStudentSettings(token, examName, examDate) {
-    return apiPost({ action: 'saveSettings', token, examName, examDate }).then(j => j.message);
-  }
+    function showStats(data, isRefresh = false) {
+      showContent();
 
-  // =====================================================================
-  // UI制御
-  // =====================================================================
+      document.getElementById('student-name').innerText = data.name;
+      document.getElementById('quote-text').innerText = data.quote || "小さなことの積み重ねが、とんでもないところへ行くただ一つの道。";
 
-  function showLoading() {
-    document.getElementById('loading').style.display = 'flex';
-    document.getElementById('content').style.display = 'none';
-    document.getElementById('error-screen').style.display = 'none';
-  }
+      // カウントダウン
+      const calculateDays = (targetDateStr) => {
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const target = new Date(targetDateStr); target.setHours(0, 0, 0, 0);
+        const diffMs = target - today;
+        const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        return days > 0 ? days : 0;
+      };
 
-  function showContent() {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error-screen').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-  }
+      document.getElementById('cd-common').innerHTML = `${calculateDays(TARGET_COMMON)}<span>日</span>`;
+      document.getElementById('cd-national').innerHTML = `${calculateDays(TARGET_NATIONAL)}<span>日</span>`;
 
-  function showError(message) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('content').style.display = 'none';
-    const errBox = document.getElementById('error-screen');
-    errBox.style.display = 'flex';
-    document.getElementById('err-message').textContent = message || 'データの取得に失敗しました。';
-  }
+      if (data.exam && data.exam.name && data.exam.date) {
+        document.getElementById('cd-custom-card').style.display = 'block';
+        document.getElementById('cd-custom-title').innerText = `${data.exam.name}まで`;
+        document.getElementById('cd-custom').innerHTML = `${calculateDays(data.exam.date)}<span>日</span>`;
+      } else {
+        document.getElementById('cd-custom-card').style.display = 'none';
+      }
 
-  // =====================================================================
-  // 初期化
-  // =====================================================================
+      // ランク
+      const badge = document.getElementById('rank-badge');
+      badge.innerText = data.rank.current;
+      badge.className = 'rank-badge rank-' + data.rank.current.replace(' ', '');
+      document.getElementById('rank-next').innerText = data.rank.remainHours > 0
+        ? `次のランクまで: 残り ${data.rank.remainHours}h`
+        : '最高ランク到達！';
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (!studentToken) {
-      showError('URLが正しくありません。管理者から配布されたURLからアクセスしてください。');
-      return;
-    }
-    try {
-      const data = await fetchStats(studentToken);
-      showStats(data);
-    } catch (err) {
-      console.error(err);
-      showError(err.message || '通信エラーが発生しました。');
-    }
-  });
+      // 出席
+      document.getElementById('streak-total').innerText  = data.streak ? data.streak.totalDays : 0;
+      document.getElementById('streak-active').innerText = data.streak ? data.streak.active   : 0;
 
-  // =====================================================================
-  // データ反映
-  // =====================================================================
+      // 週次目標
+      if (data.weeklyGoal) {
+        document.getElementById('goal-title-text').innerText = `今週の目標（${data.weeklyGoal.targetHours}h）`;
+        document.getElementById('goal-current').innerText = data.weeklyGoal.currentHours;
+        document.getElementById('goal-percent').innerText = data.weeklyGoal.percent;
+        setTimeout(() => {
+          document.getElementById('progress-bar').style.width = data.weeklyGoal.percent + '%';
+        }, 300);
+      }
 
-  function showStats(data, isRefresh = false) {
-    showContent();
+      // 学習時間
+      document.getElementById('val-today').innerText = data.today;
+      document.getElementById('val-week').innerText  = data.week;
+      document.getElementById('val-total').innerText = data.total;
 
-    document.getElementById('student-name').innerText = data.name;
-    document.getElementById('quote-text').innerText = data.quote || "小さなことの積み重ねが、とんでもないところへ行くただ一つの道。";
+      // 小テスト
+      renderTests(data.tests);
 
-    // カウントダウン
-    const calculateDays = (targetDateStr) => {
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const target = new Date(targetDateStr); target.setHours(0, 0, 0, 0);
-      const diffMs = target - today;
-      const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      return days > 0 ? days : 0;
-    };
+      // 今週ランキング
+      renderRanking(data.community && data.community.ranking);
 
-    document.getElementById('cd-common').innerHTML = `${calculateDays(TARGET_COMMON)}<span>日</span>`;
-    document.getElementById('cd-national').innerHTML = `${calculateDays(TARGET_NATIONAL)}<span>日</span>`;
+      // リアルタイム速報（エールボタン廃止済み）
+      renderFeed(data.community && data.community.feed);
 
-    if (data.exam && data.exam.name && data.exam.date) {
-      document.getElementById('cd-custom-card').style.display = 'block';
-      document.getElementById('cd-custom-title').innerText = `${data.exam.name}まで`;
-      document.getElementById('cd-custom').innerHTML = `${calculateDays(data.exam.date)}<span>日</span>`;
-    } else {
-      document.getElementById('cd-custom-card').style.display = 'none';
-    }
+      // 履歴
+      renderHistory(data.history);
 
-    // ランク
-    const badge = document.getElementById('rank-badge');
-    badge.innerText = data.rank.current;
-    badge.className = 'rank-badge rank-' + data.rank.current.replace(' ', '');
-    document.getElementById('rank-next').innerText = data.rank.remainHours > 0
-      ? `次のランクまで: 残り ${data.rank.remainHours}h`
-      : '最高ランク到達！';
+      // QRコード描画（data.id が無くてもエラーにならないようガード）
+      renderQRCode(data.id);
 
-    // 出席
-    document.getElementById('streak-total').innerText  = data.streak ? data.streak.totalDays : 0;
-    document.getElementById('streak-active').innerText = data.streak ? data.streak.active   : 0;
+      // チャート用データ準備
+      chartData = {
+        daily:   data.daily   || { labels: [], values: [] },
+        weekly:  data.weekly  || { labels: [], values: [] },
+        monthly: data.monthly || { labels: [], values: [] }
+      };
 
-    // 週次目標
-    if (data.weeklyGoal) {
-      document.getElementById('goal-title-text').innerText = `今週の目標（${data.weeklyGoal.targetHours}h）`;
-      document.getElementById('goal-current').innerText = data.weeklyGoal.currentHours;
-      document.getElementById('goal-percent').innerText = data.weeklyGoal.percent;
-      setTimeout(() => {
-        document.getElementById('progress-bar').style.width = data.weeklyGoal.percent + '%';
-      }, 300);
-    }
-
-    // 学習時間
-    document.getElementById('val-today').innerText = data.today;
-    document.getElementById('val-week').innerText  = data.week;
-    document.getElementById('val-total').innerText = data.total;
-
-    // 各セクション
-    renderTests(data.tests);
-    renderRanking(data.community && data.community.ranking);
-    renderFeed(data.community && data.community.feed);
-    renderHistory(data.history);
-
-    // QRコード描画（data.id が無くてもエラーにならないようガード）
-    renderQRCode(data.id);
-
-    // チャート用データ準備
-    chartData = {
-      daily:   data.daily   || { labels: [], values: [] },
-      weekly:  data.weekly  || { labels: [], values: [] },
-      monthly: data.monthly || { labels: [], values: [] }
-    };
-
-    if (isRefresh) {
-      // 更新時：スクロールアニメーションをスキップして即座に全描画
-      drawChart('dailyChart',   chartData.daily.labels,   chartData.daily.values);
-      drawChart('weeklyChart',  chartData.weekly.labels,  chartData.weekly.values);
-      drawChart('monthlyChart', chartData.monthly.labels, chartData.monthly.values);
-      document.querySelectorAll('.chart-container, .comm-card, .test-container, .history-container')
-        .forEach(el => el.classList.add('visible'));
-    } else {
-      setupScrollAnimations();
-    }
-  }
-
-  // ----- 各セクションのレンダラ -----
-
-  function renderTests(tests) {
-    const testList = document.getElementById('test-list');
-    if (!tests || tests.length === 0) {
-      testList.innerHTML = '<div style="text-align:center; color:#666; padding: 20px;">現在挑戦中の小テストはありません</div>';
-      return;
-    }
-    testList.innerHTML = tests.map(test => {
-      const blocks = test.blocks.map(isCompleted =>
-        `<div class="grid-box${isCompleted ? ' completed' : ''}">
-           <svg class="stamp-icon"><use href="#sss-logo"></use></svg>
-         </div>`
-      ).join('');
-      return `
-        <div class="test-item">
-          <div class="test-header">
-            <div class="test-name">📘 ${escapeHtml(test.name)}</div>
-            <div class="test-count"><span>${test.completed}</span> / ${test.total}</div>
-          </div>
-          <div class="grid-container">${blocks}</div>
-        </div>
-      `;
-    }).join('');
-  }
-
-  function renderRanking(ranking) {
-    const rankList = document.getElementById('ranking-list');
-    if (!ranking || ranking.length === 0) {
-      rankList.innerHTML = '<li class="comm-item" style="color:#666; justify-content:center;">データがありません</li>';
-      return;
-    }
-    const medals = ['🥇', '🥈', '🥉', '🎖', '🎖'];
-    rankList.innerHTML = ranking.map((r, idx) => `
-      <li class="comm-item">
-        <span class="rank-name"><span class="rank-icon">${medals[idx] || ''}</span> ${escapeHtml(r.name)}</span>
-        <span class="rank-score">${r.hours}h</span>
-      </li>
-    `).join('');
-  }
-
-  function renderFeed(feed) {
-    const feedList = document.getElementById('feed-list');
-    if (!feed || feed.length === 0) {
-      feedList.innerHTML = '<li class="comm-item" style="color:#666; justify-content:center;">データがありません</li>';
-      return;
-    }
-    feedList.innerHTML = feed.map(f => {
-      const isEntry = f.action === '入室';
-      const color = isEntry ? '#d3ad4f' : '#a0a0a0';
-      const icon  = isEntry ? '▶' : '■';
-      return `
-        <li class="comm-item">
-          <span style="color:${color}; font-size:11px;">${icon} ${escapeHtml(f.time)}</span>
-          <span class="feed-name">${escapeHtml(f.name)} さんが${escapeHtml(f.action)}</span>
-        </li>
-      `;
-    }).join('');
-  }
-
-  function renderHistory(history) {
-    const historyBody = document.getElementById('history-body');
-    if (!history || history.length === 0) {
-      historyBody.innerHTML = '<tr><td colspan="4" style="color:#666;">最近の記録はありません</td></tr>';
-      return;
-    }
-    historyBody.innerHTML = history.map(h => `
-      <tr>
-        <td>${escapeHtml(h.date)}</td>
-        <td>${escapeHtml(h.in)}</td>
-        <td>${escapeHtml(h.out)}</td>
-        <td>${escapeHtml(h.time)}</td>
-      </tr>
-    `).join('');
-  }
-
-  // 簡易エスケープ（XSS対策）
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  // =====================================================================
-  // QRコード描画
-  // =====================================================================
-
-  function renderQRCode(studentId) {
-    const idText = document.getElementById('qr-id-text');
-    const canvas = document.getElementById('qr-canvas');
-
-    // QR用要素がHTMLに無い場合や、IDが取れていない場合はスキップ（描画失敗で全体が止まらないように）
-    if (!canvas || !idText) return;
-    if (!studentId) {
-      idText.textContent = '取得できませんでした';
-      return;
-    }
-    if (typeof QRCode === 'undefined') {
-      console.warn('QRCodeライブラリが読み込まれていません');
-      idText.textContent = String(studentId);
-      return;
-    }
-
-    idText.textContent = String(studentId);
-    QRCode.toCanvas(canvas, String(studentId), {
-      width: 220,
-      margin: 1,
-      color: { dark: '#000000', light: '#ffffff' },
-      errorCorrectionLevel: 'M'
-    }, (err) => {
-      if (err) console.error('QR生成エラー:', err);
-    });
-  }
-
-  // =====================================================================
-  // 画面更新（PWA内でリロード相当のことを行う）
-  // =====================================================================
-
-  async function refreshData() {
-    if (!studentToken) return;
-    const btn = document.getElementById('refresh-btn');
-    if (btn) {
-      btn.disabled = true;
-      btn.classList.add('spinning');
-    }
-    try {
-      const data = await fetchStats(studentToken);
-      showStats(data, true);
-    } catch (err) {
-      console.error(err);
-      alert('更新に失敗しました：' + (err.message || '通信エラー'));
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.classList.remove('spinning');
+      if (isRefresh) {
+        // 更新時：スクロールアニメーションをスキップして即座に全描画
+        drawChart('dailyChart',   chartData.daily.labels,   chartData.daily.values);
+        drawChart('weeklyChart',  chartData.weekly.labels,  chartData.weekly.values);
+        drawChart('monthlyChart', chartData.monthly.labels, chartData.monthly.values);
+        document.querySelectorAll('.chart-container, .comm-card, .test-container, .history-container')
+          .forEach(el => el.classList.add('visible'));
+      } else {
+        setupScrollAnimations();
       }
     }
-  }
 
-  // =====================================================================
-  // 設定モーダル
-  // =====================================================================
+    // ----- 各セクションのレンダラ -----
 
-  function openModal() {
-    document.getElementById('modal-overlay').style.display = 'block';
-    document.getElementById('settings-modal').style.display = 'block';
-  }
-
-  function closeModal() {
-    document.getElementById('modal-overlay').style.display = 'none';
-    document.getElementById('settings-modal').style.display = 'none';
-  }
-
-  async function saveSettings() {
-    const name = document.getElementById('input-exam-name').value.trim();
-    const date = document.getElementById('input-exam-date').value;
-    const btn  = document.getElementById('save-btn');
-
-    if (!name || !date) {
-      alert('模試名と日付を入力してください');
-      return;
+    function renderTests(tests) {
+      const testList = document.getElementById('test-list');
+      if (!tests || tests.length === 0) {
+        testList.innerHTML = '<div style="text-align:center; color:#666; padding: 20px;">現在挑戦中の小テストはありません</div>';
+        return;
+      }
+      testList.innerHTML = tests.map(test => {
+        const blocks = test.blocks.map(isCompleted =>
+          `<div class="grid-box${isCompleted ? ' completed' : ''}">
+             <svg class="stamp-icon"><use href="#sss-logo"></use></svg>
+           </div>`
+        ).join('');
+        return `
+          <div class="test-item">
+            <div class="test-header">
+              <div class="test-name">📘 ${escapeHtml(test.name)}</div>
+              <div class="test-count"><span>${test.completed}</span> / ${test.total}</div>
+            </div>
+            <div class="grid-container">${blocks}</div>
+          </div>
+        `;
+      }).join('');
     }
 
-    btn.disabled = true;
-    btn.innerText = 'SAVING...';
-
-    try {
-      await saveStudentSettings(studentToken, name, date);
-      closeModal();
-      showLoading();
-      const data = await fetchStats(studentToken);
-      showStats(data);
-    } catch (err) {
-      console.error(err);
-      alert('保存に失敗しました：' + (err.message || '不明なエラー'));
-    } finally {
-      btn.disabled = false;
-      btn.innerText = 'SAVE SETTINGS';
-    }
-  }
-
-  // =====================================================================
-  // チャート描画＆スクロールアニメーション
-  // =====================================================================
-
-  function drawChart(canvasId, labels, values) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-
-    // 既存のチャートがあれば破棄してから再描画（更新時の重複防止）
-    if (chartInstances[canvasId]) {
-      chartInstances[canvasId].destroy();
+    function renderRanking(ranking) {
+      const rankList = document.getElementById('ranking-list');
+      if (!ranking || ranking.length === 0) {
+        rankList.innerHTML = '<li class="comm-item" style="color:#666; justify-content:center;">データがありません</li>';
+        return;
+      }
+      const medals = ['🥇', '🥈', '🥉', '🎖', '🎖'];
+      rankList.innerHTML = ranking.map((r, idx) => `
+        <li class="comm-item">
+          <span class="rank-name"><span class="rank-icon">${medals[idx] || ''}</span> ${escapeHtml(r.name)}</span>
+          <span class="rank-score">${r.hours}h</span>
+        </li>
+      `).join('');
     }
 
-    chartInstances[canvasId] = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: values,
-          backgroundColor: 'rgba(211, 173, 79, 0.15)',
-          borderColor: '#d3ad4f',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.4,
-          pointBackgroundColor: '#d3ad4f',
-          pointRadius: 3,
-          pointHoverRadius: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        animation: { duration: 1500, easing: 'easeOutQuart' },
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#a0a0a0' } },
-          x: { grid: { display: false }, ticks: { color: '#a0a0a0', maxRotation: 45, minRotation: 45 } }
+    function renderFeed(feed) {
+      const feedList = document.getElementById('feed-list');
+      if (!feed || feed.length === 0) {
+        feedList.innerHTML = '<li class="comm-item" style="color:#666; justify-content:center;">データがありません</li>';
+        return;
+      }
+      feedList.innerHTML = feed.map(f => {
+        const isEntry = f.action === '入室';
+        const color = isEntry ? '#d3ad4f' : '#a0a0a0';
+        const icon  = isEntry ? '▶' : '■';
+        return `
+          <li class="comm-item">
+            <span style="color:${color}; font-size:11px;">${icon} ${escapeHtml(f.time)}</span>
+            <span class="feed-name">${escapeHtml(f.name)} さんが${escapeHtml(f.action)}</span>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function renderHistory(history) {
+      const historyBody = document.getElementById('history-body');
+      if (!history || history.length === 0) {
+        historyBody.innerHTML = '<tr><td colspan="4" style="color:#666;">最近の記録はありません</td></tr>';
+        return;
+      }
+      historyBody.innerHTML = history.map(h => `
+        <tr>
+          <td>${escapeHtml(h.date)}</td>
+          <td>${escapeHtml(h.in)}</td>
+          <td>${escapeHtml(h.out)}</td>
+          <td>${escapeHtml(h.time)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // 簡易エスケープ（XSS対策）
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // =====================================================================
+    // QRコード描画
+    // =====================================================================
+
+    function renderQRCode(studentId) {
+      const idText = document.getElementById('qr-id-text');
+      const canvas = document.getElementById('qr-canvas');
+
+      // 要素やIDが無い場合はスキップ（描画失敗で全体が止まらないように）
+      if (!canvas || !idText) return;
+      if (!studentId) {
+        idText.textContent = '取得できませんでした';
+        return;
+      }
+      if (typeof QRCode === 'undefined') {
+        console.warn('QRCodeライブラリが読み込まれていません');
+        idText.textContent = String(studentId);
+        return;
+      }
+
+      idText.textContent = String(studentId);
+      QRCode.toCanvas(canvas, String(studentId), {
+        width: 220,
+        margin: 1,
+        color: { dark: '#000000', light: '#ffffff' },
+        errorCorrectionLevel: 'M'
+      }, (err) => {
+        if (err) console.error('QR生成エラー:', err);
+      });
+    }
+
+    // =====================================================================
+    // 画面更新（PWA内でリロード相当のことを行う）
+    // =====================================================================
+
+    async function refreshData() {
+      if (!studentToken) return;
+      const btn = document.getElementById('refresh-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('spinning');
+      }
+      try {
+        const data = await fetchStats(studentToken);
+        showStats(data, true);
+      } catch (err) {
+        console.error(err);
+        alert('更新に失敗しました：' + (err.message || '通信エラー'));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('spinning');
         }
       }
-    });
-  }
+    }
 
-  function setupScrollAnimations() {
-    const observer = new IntersectionObserver((entries, obs) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          if (entry.target.id === 'box-daily')   drawChart('dailyChart',   chartData.daily.labels,   chartData.daily.values);
-          if (entry.target.id === 'box-weekly')  drawChart('weeklyChart',  chartData.weekly.labels,  chartData.weekly.values);
-          if (entry.target.id === 'box-monthly') drawChart('monthlyChart', chartData.monthly.labels, chartData.monthly.values);
-          obs.unobserve(entry.target);
+    // =====================================================================
+    // 設定モーダル
+    // =====================================================================
+
+    function openModal() {
+      document.getElementById('modal-overlay').style.display = 'block';
+      document.getElementById('settings-modal').style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').style.display = 'none';
+      document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    async function saveSettings() {
+      const name = document.getElementById('input-exam-name').value.trim();
+      const date = document.getElementById('input-exam-date').value;
+      const btn  = document.getElementById('save-btn');
+
+      if (!name || !date) {
+        alert('模試名と日付を入力してください');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = 'SAVING...';
+
+      try {
+        // 1. 設定を保存
+        await saveStudentSettings(studentToken, name, date);
+
+        // 2. モーダルを閉じてローディング表示
+        closeModal();
+        showLoading();
+
+        // 3. 最新データを取り直して画面を再描画
+        const data = await fetchStats(studentToken);
+        showStats(data);
+      } catch (err) {
+        console.error(err);
+        alert('保存に失敗しました：' + (err.message || '不明なエラー'));
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'SAVE SETTINGS';
+      }
+    }
+
+    // =====================================================================
+    // チャート＆スクロールアニメーション
+    // =====================================================================
+
+    function drawChart(canvasId, labels, values) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+
+      // 既存のチャートがあれば破棄してから再描画（更新時の重複防止）
+      if (chartInstances[canvasId]) {
+        chartInstances[canvasId].destroy();
+      }
+
+      chartInstances[canvasId] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: 'rgba(211, 173, 79, 0.15)',
+            borderColor: '#d3ad4f',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#d3ad4f',
+            pointRadius: 3,
+            pointHoverRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          animation: { duration: 1500, easing: 'easeOutQuart' },
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#333' }, ticks: { color: '#a0a0a0' } },
+            x: { grid: { display: false }, ticks: { color: '#a0a0a0', maxRotation: 45, minRotation: 45 } }
+          }
         }
       });
-    }, { threshold: 0.1 });
+    }
 
-    ['box-tests', 'box-ranking', 'box-feed', 'box-daily', 'box-weekly', 'box-monthly', 'box-history'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-  }
-</script>  
+    function setupScrollAnimations() {
+      const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            if (entry.target.id === 'box-daily')   drawChart('dailyChart',   chartData.daily.labels,   chartData.daily.values);
+            if (entry.target.id === 'box-weekly')  drawChart('weeklyChart',  chartData.weekly.labels,  chartData.weekly.values);
+            if (entry.target.id === 'box-monthly') drawChart('monthlyChart', chartData.monthly.labels, chartData.monthly.values);
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+
+      ['box-tests', 'box-ranking', 'box-feed', 'box-daily', 'box-weekly', 'box-monthly', 'box-history'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      });
+    }
+  </script>
 </body>
+
 </html>
-
-
-
-
