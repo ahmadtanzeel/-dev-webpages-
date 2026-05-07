@@ -1,10 +1,18 @@
 // ====================================================================
-// 【列構成 最新版】インデックス定義（個人情報・公開プロフィール共通）
-// A列:ID, B列:氏名, C列:ニックネーム, D列:目標時間, E列:URLトークン, F列:模試名, G列:模試日
+// 【列構成 最新版】インデックス定義（公開プロフィール / 個人情報マスタ共通）
+// A:ID / B:氏名 / C:ニックネーム / D:生徒メアド / E:保護者メアド
+// F:目標時間 / G:URLトークン / H:模試名 / I:模試日
 // ====================================================================
 const IDX_PROFILE = {
-  ID: 0, NAME: 1, NICKNAME: 2, GOAL_HOURS: 3,
-  TOKEN: 4, EXAM_NAME: 5, EXAM_DATE: 6
+  ID: 0,             // A列
+  NAME: 1,           // B列
+  NICKNAME: 2,       // C列
+  STUDENT_EMAIL: 3,  // D列 ★新規
+  PARENT_EMAIL: 4,   // E列 ★新規
+  GOAL_HOURS: 5,     // F列（旧D列）
+  TOKEN: 6,          // G列（旧E列）
+  EXAM_NAME: 7,      // H列（旧F列）
+  EXAM_DATE: 8       // I列（旧G列）
 };
 const IDX_PERSONAL = IDX_PROFILE;
 
@@ -310,7 +318,7 @@ function saveStudentSettings(token, examName, examDate) {
 }
 
 // ====================================================================
-// ④ 受付打刻処理（★ 大幅高速化版 ★）
+// ④ 受付打刻処理（★ 保護者メール通知機能つき ★）
 // ====================================================================
 function processScan(studentId) {
   if (!studentId) return "エラー：IDが読み込めませんでした";
@@ -324,11 +332,12 @@ function processScan(studentId) {
   if (lastRow < 1) return "エラー：シートが空です";
 
   // ★ 直近100件だけを後ろから取得（typically 1日以内の打刻）
-  // 100件で見つからなければ300件、500件と段階的に拡張する保険つき
+  // 100件で見つからなければ300件、900件と段階的に拡張する保険つき
   let existingRowIndex = -1;
+  let existingInTime = null;  // 退室時にメールへ含める「本日の学習時間」計算用
   let searchSize = Math.min(100, lastRow - 1);
   let attempt = 0;
-  let maxAttempts = 3; // 100, 300, 500 件まで遡る
+  let maxAttempts = 3; // 100, 300, 900 件まで遡る
 
   while (existingRowIndex === -1 && attempt < maxAttempts && searchSize > 0) {
     let startRow = Math.max(2, lastRow - searchSize + 1);
@@ -345,6 +354,7 @@ function processScan(studentId) {
       if (String(data[i][IDX_LOG.ID]).trim() !== cleanTargetId) continue;
       if (data[i][IDX_LOG.OUT] === "" || data[i][IDX_LOG.OUT] === null) {
         existingRowIndex = startRow + i; // 実際の行番号
+        existingInTime = data[i][IDX_LOG.IN]; // 入室時刻を保持
         break;
       }
     }
@@ -354,10 +364,15 @@ function processScan(studentId) {
   }
 
   let actionType = "";
+  let studyMs = 0;
   if (existingRowIndex > 0) {
     // 退室処理
     sheet.getRange(existingRowIndex, IDX_LOG.OUT + 1).setValue(now);
     actionType = "退室";
+    if (existingInTime instanceof Date) {
+      studyMs = now.getTime() - existingInTime.getTime();
+      if (studyMs < 0) studyMs = 0;
+    }
   } else {
     // 入室処理（最終行の次に追記）
     const targetRow = lastRow + 1;
@@ -365,22 +380,73 @@ function processScan(studentId) {
     actionType = "入室";
   }
 
-  // ★ プロフィール検索：見つかったら即break（既存通りだが念のため確認）
+  // プロフィール検索：見つかったら即break
   const pData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
   let studentName = "学習者";
   let studentToken = null;
+  let parentEmail = null;
 
   for (let i = 1; i < pData.length; i++) {
     if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) {
       studentName = pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者";
       studentToken = String(pData[i][IDX_PROFILE.TOKEN]).trim();
+
+      // 保護者メアドを取得（@マークを含むかで簡易バリデーション）
+      const rawParentEmail = pData[i][IDX_PROFILE.PARENT_EMAIL];
+      if (rawParentEmail && String(rawParentEmail).indexOf('@') > 0) {
+        parentEmail = String(rawParentEmail).trim();
+      }
       break;
     }
+  }
+
+  // 🔔 保護者にメール通知（E列が入力されていれば送信）
+  if (parentEmail) {
+    notifyParent(studentName, parentEmail, actionType, now, studyMs);
   }
 
   if (studentToken) CacheService.getScriptCache().remove(studentToken);
 
   return `${studentName} さんが ${actionType} しました！`;
+}
+
+// ====================================================================
+// ④-2 保護者向けメール送信
+// ====================================================================
+function notifyParent(studentName, parentEmail, actionType, datetime, studyMs) {
+  const timeStr = Utilities.formatDate(datetime, "JST", "yyyy年MM月dd日 HH時mm分");
+  const subject = `【SSS Education】${studentName}さんが${actionType}しました`;
+
+  let body =
+    `${studentName} さんの保護者様\n\n` +
+    `いつもSSS Educationをご利用いただき、ありがとうございます。\n` +
+    `お子様が以下の通り自習室に${actionType}されました。\n\n` +
+    `  日時：${timeStr}\n` +
+    `  行動：${actionType}\n`;
+
+  // 退室時のみ「本日の学習時間」を追記
+  if (actionType === "退室" && studyMs > 0) {
+    body += `  本日の学習時間：${formatTime(studyMs)}\n`;
+  }
+
+  body +=
+    `\n` +
+    `引き続き、お子様の学習を見守ってまいります。\n` +
+    `何かございましたら、お気軽に塾までお問い合わせください。\n\n` +
+    `──────────────────\n` +
+    `SSS Education 自習室管理システム\n` +
+    `※このメールは自動送信されています。返信はできませんのでご了承ください。\n` +
+    `──────────────────\n`;
+
+  try {
+    MailApp.sendEmail({
+      to: parentEmail,
+      subject: subject,
+      body: body
+    });
+  } catch (err) {
+    console.error(`保護者メール送信失敗 (${parentEmail}):`, err);
+  }
 }
 
 // ====================================================================
@@ -500,4 +566,39 @@ function testProcessScanSpeed() {
   const result = processScan('テスト用の実在する学習者ID');  // ここを実IDに書き換えて実行
   const elapsed = new Date().getTime() - start;
   console.log(`処理時間: ${elapsed}ms / 結果: ${result}`);
+}
+
+// ====================================================================
+// 🔧 デバッグ用：「公開プロフィール」シートの列構成を確認
+//    シート列とコード側のIDX_PROFILE定数が一致しているか確認用
+// ====================================================================
+function debugProfileColumns() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('公開プロフィール');
+  if (!sheet) { console.log('シート「公開プロフィール」が見つかりません'); return; }
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  console.log('=== シート上の列構成 ===');
+  headers.forEach((h, i) => {
+    const col = String.fromCharCode(65 + i);
+    console.log(`  ${col}列(${i}): ${h}`);
+  });
+
+  console.log('\n=== コード側の認識（IDX_PROFILE） ===');
+  Object.keys(IDX_PROFILE).forEach(key => {
+    const idx = IDX_PROFILE[key];
+    const col = String.fromCharCode(65 + idx);
+    const headerVal = idx < headers.length ? headers[idx] : '(範囲外)';
+    console.log(`  ${key.padEnd(15)} → ${col}列(${idx})：${headerVal}`);
+  });
+}
+
+// ====================================================================
+// 🔧 デバッグ用：保護者メール送信テスト
+//    test@example.com の部分を自分のメアドに変更して実行
+// ====================================================================
+function testEmailSend() {
+  const testEmail = 'test@example.com';  // ★自分のメアドに変更
+  notifyParent('テスト 太郎', testEmail, '退室', new Date(), 3 * 3600000 + 25 * 60000);
+  console.log(`テストメールを ${testEmail} に送信しました`);
 }
