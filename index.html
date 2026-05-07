@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <base target="_top">
   <meta charset="UTF-8">
   <title>SSS Education 自習室システム</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- PWA対応（任意） -->
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SSS 受付">
+  <link rel="apple-touch-icon" href="Company(1).png">
+
   <style>
     :root {
       --gold: #d3ad4f;
@@ -49,7 +56,7 @@
     .container {
       width: 90%;
       max-width: 600px;
-      padding: 50px 40px 40px; /* 上下左右の余白を調整 */
+      padding: 50px 40px 40px;
       background: var(--dark-gray);
       border: 1px solid rgba(211, 173, 79, 0.3);
       position: relative;
@@ -57,18 +64,17 @@
       transition: all 0.3s ease;
     }
 
-    /* ★ ログイン成功時の視覚エフェクト ★ */
     .container.success-glow {
       animation: glow-pulse 1s ease-out forwards;
       border-color: var(--gold);
     }
     @keyframes glow-pulse {
-      0% { box-shadow: 0 0 0 rgba(211, 173, 79, 0); transform: scale(1); }
-      20% { box-shadow: 0 0 60px rgba(211, 173, 79, 0.8); transform: scale(1.02); }
+      0%   { box-shadow: 0 0 0 rgba(211, 173, 79, 0); transform: scale(1); }
+      20%  { box-shadow: 0 0 60px rgba(211, 173, 79, 0.8); transform: scale(1.02); }
       100% { box-shadow: 0 0 30px rgba(211, 173, 79, 0.3); transform: scale(1); }
     }
 
-    /* 四隅の装飾（スクエア） */
+    /* 四隅の装飾 */
     .border-line {
       position: absolute;
       width: 30px;
@@ -82,7 +88,6 @@
     .bl { bottom: 15px; left: 15px; border-width: 0 0 1px 1px; }
     .br { bottom: 15px; right: 15px; border-width: 0 1px 1px 0; }
 
-    /* 成功時に四隅の枠も少し太くして目立たせる */
     .container.success-glow .border-line {
       width: 40px; height: 40px; border-width: 2px;
     }
@@ -137,7 +142,7 @@
       align-items: center;
     }
     .msg-main { font-size: 24px; font-weight: bold; letter-spacing: 1px; }
-    .msg-sub { font-size: 16px; margin-top: 10px; color: var(--gold); }
+    .msg-sub  { font-size: 16px; margin-top: 10px; color: var(--gold); }
 
     /* ローディング回転 */
     .loader {
@@ -149,11 +154,11 @@
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* ★ 時計・日付エリア（枠内に収めるための調整） ★ */
+    /* 時計・日付エリア */
     #datetime-display {
       margin-top: 20px;
       padding-top: 20px;
-      border-top: 1px dashed rgba(211, 173, 79, 0.3); /* 時計エリアとの境界線 */
+      border-top: 1px dashed rgba(211, 173, 79, 0.3);
       text-align: center;
       letter-spacing: 2px;
     }
@@ -168,7 +173,6 @@
       color: var(--white);
       text-shadow: 0 0 15px rgba(255,255,255,0.2);
     }
-
   </style>
 </head>
 <body>
@@ -202,10 +206,15 @@
   </div>
 
 <script>
-  const input = document.getElementById('scanInput');
-  const msgMain = document.getElementById('msg-main');
-  const msgSub = document.getElementById('msg-sub');
-  const overlay = document.getElementById('overlay');
+  // =====================================================================
+  // 設定（dashboard.htmlと同じAPIエンドポイントを指定）
+  // =====================================================================
+  const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyclB58dLRD1kawXot4nE9cW0Lq3tMnnFPZ_29NbOhp9StL693615lPrVW_palugJp9_A/exec';
+
+  const input    = document.getElementById('scanInput');
+  const msgMain  = document.getElementById('msg-main');
+  const msgSub   = document.getElementById('msg-sub');
+  const overlay  = document.getElementById('overlay');
   const container = document.getElementById('main-container');
 
   // システム開始処理
@@ -214,11 +223,11 @@
     input.focus();
   }
 
-  // 常にフォーカスを維持する（iPad対策）
+  // 常にフォーカスを維持（iPad対策）
   document.addEventListener('touchstart', () => {
     if (overlay.style.display === 'none') input.focus();
   });
-  
+
   // 入力監視：全角が混じったら即座に消去
   input.addEventListener('input', () => {
     input.value = input.value.replace(/[^\x20-\x7E]/g, '');
@@ -232,40 +241,51 @@
     }
   });
 
-  function executeScan(id) {
+  // =====================================================================
+  // QRスキャン → API呼び出し（fetchベース）
+  // =====================================================================
+  async function executeScan(id) {
     input.disabled = true;
     msgMain.innerHTML = '<div class="loader"></div>';
     msgSub.innerText = 'AUTHENTICATING...';
 
-    const timeout = setTimeout(() => {
-      resetUI("通信タイムアウト", "もう一度試してください");
-    }, 10000);
+    // タイムアウト付きfetch（10秒）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    // ★GAS環境でテストしていない時のエラーを防ぐためのおまじない★
-    if (typeof google === 'undefined') {
-      return; 
+    try {
+      const res = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'scan', id: id }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'サーバーエラー');
+
+      // 成功時の視覚エフェクト
+      container.classList.add('success-glow');
+      msgMain.style.color = 'var(--gold)';
+      msgMain.innerHTML = '✓ ACCESS GRANTED';
+      msgSub.innerText  = json.message;
+
+      setTimeout(() => resetUI(), 4000);
+
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error(err);
+
+      const isTimeout = err.name === 'AbortError';
+      msgMain.style.color = '#ff4d4d';
+      msgMain.innerText = isTimeout ? 'TIMEOUT' : 'SYSTEM ERROR';
+      msgSub.innerText  = isTimeout ? 'もう一度試してください' : '管理者へ連絡してください';
+
+      setTimeout(() => resetUI(), 4000);
     }
-
-    google.script.run
-      .withSuccessHandler(function(response) {
-        clearTimeout(timeout);
-        
-        // ★ 成功時の視覚エフェクト追加 ★
-        container.classList.add('success-glow');
-        msgMain.style.color = 'var(--gold)';
-        msgMain.innerHTML = '✓ ACCESS GRANTED'; // チェックマークを追加
-        msgSub.innerText = response;
-        
-        setTimeout(resetUI, 4000);
-      })
-      .withFailureHandler(function(err) {
-        clearTimeout(timeout);
-        msgMain.style.color = '#ff4d4d';
-        msgMain.innerText = 'SYSTEM ERROR';
-        msgSub.innerText = '管理者へ連絡してください';
-        setTimeout(resetUI, 4000);
-      })
-      .processScan(id);
   }
 
   function resetUI(mainText = "", subText = "") {
@@ -273,28 +293,28 @@
     input.value = '';
     msgMain.style.color = 'var(--white)';
     msgMain.innerText = mainText;
-    msgSub.innerText = subText;
-    
-    // ★ エフェクトを解除 ★
+    msgSub.innerText  = subText;
     container.classList.remove('success-glow');
-    
     input.focus();
   }
 
+  // 入力欄が常にフォーカスされているように維持
   setInterval(() => {
     if (!input.disabled && document.activeElement !== input) {
       input.focus();
     }
   }, 1000);
 
-  // ★ 時計の更新処理 ★
+  // =====================================================================
+  // 時計の更新
+  // =====================================================================
   function updateClock() {
     const now = new Date();
     const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-    
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
+
+    const y  = now.getFullYear();
+    const m  = String(now.getMonth() + 1).padStart(2, '0');
+    const d  = String(now.getDate()).padStart(2, '0');
     const day = days[now.getDay()];
 
     const hh = String(now.getHours()).padStart(2, '0');
@@ -304,11 +324,9 @@
     document.getElementById('date-text').innerText = `${y}.${m}.${d} (${day})`;
     document.getElementById('time-text').innerText = `${hh}:${mm}:${ss}`;
   }
-  
-  // 時計を1秒ごとに動かす
-  setInterval(updateClock, 1000);
-  updateClock(); // 読み込み時すぐに1回実行
 
+  setInterval(updateClock, 1000);
+  updateClock();
 </script>
 </body>
 </html>

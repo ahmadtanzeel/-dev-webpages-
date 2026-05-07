@@ -42,12 +42,17 @@ function doGet(e) {
 // ====================================================================
 function doPost(e) {
   try {
-    // フロントは Content-Type: text/plain でJSON文字列を送ってくる（CORSプリフライト回避のため）
     const body = JSON.parse(e.postData.contents || '{}');
     const action = body.action;
 
     if (action === 'saveSettings') {
       const msg = saveStudentSettings(body.token, body.examName, body.examDate);
+      return jsonResponse({ ok: true, message: msg });
+    }
+
+    // ★ 以下を追加（受付QR打刻用）
+    if (action === 'scan') {
+      const msg = processScan(body.id);
       return jsonResponse({ ok: true, message: msg });
     }
 
@@ -383,3 +388,10 @@ function calculateStreak(uniqueDates) {
 }
 function onOpen() { SpreadsheetApp.getUi().createMenu('★管理メニュー').addItem('QRメールの下書き作成', 'showDraftDialog').addToUi(); }
 function showDraftDialog() { SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutputFromFile('draftDialog').setWidth(400).setHeight(320), 'QRコード送付'); }
+
+function testProcessScanSpeed() {
+  const start = new Date().getTime();
+  const result = processScan('テスト用の実在する学習者ID');
+  const elapsed = new Date().getTime() - start;
+  console.log(`処理時間: ${elapsed}ms / 結果: ${result}`);
+}
