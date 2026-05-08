@@ -410,7 +410,11 @@ function processScan(studentId) {
     actionType = "入室";
   }
 
-  // プロフィール検索：見つかったら即break
+  // ====================================================================
+  // 【優先度1】画面応答用の情報を確定する
+  //   ここまでで打刻処理は完了。クライアントへの応答メッセージはここで決定される。
+  //   以降の通知処理（メール・Webhook）は、もし失敗しても画面応答には一切影響しない。
+  // ====================================================================
   const pData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
   let studentName = "学習者";
   let studentToken = null;
@@ -420,8 +424,6 @@ function processScan(studentId) {
     if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) {
       studentName = pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者";
       studentToken = String(pData[i][IDX_PROFILE.TOKEN]).trim();
-
-      // 保護者メアドを取得（@マークを含むかで簡易バリデーション）
       const rawParentEmail = pData[i][IDX_PROFILE.PARENT_EMAIL];
       if (rawParentEmail && String(rawParentEmail).indexOf('@') > 0) {
         parentEmail = String(rawParentEmail).trim();
@@ -430,17 +432,35 @@ function processScan(studentId) {
     }
   }
 
-  // 🔔 保護者にメール通知（E列が入力されていれば送信）
-  if (parentEmail) {
-    notifyParent(studentName, parentEmail, actionType, now, studyMs);
-  }
+  // 応答メッセージはここで確定（以降の処理が失敗しても変わらない）
+  const responseMessage = `${studentName} さんが ${actionType} しました！`;
 
-  // 💬 Google Chatに通知（管理者向け：全員の入退室をチャットで把握）
-  notifyGoogleChat(studentName, actionType, now, studyMs);
-
+  // キャッシュクリア（軽量処理なのでここに置く）
   if (studentToken) CacheService.getScriptCache().remove(studentToken);
 
-  return `${studentName} さんが ${actionType} しました！`;
+  // ====================================================================
+  // 【優先度2】保護者メール通知
+  //   失敗しても画面応答には影響しないように try-catch で完全分離
+  // ====================================================================
+  if (parentEmail) {
+    try {
+      notifyParent(studentName, parentEmail, actionType, now, studyMs);
+    } catch (e) {
+      console.error('[優先度2] 保護者メール処理で例外:', e);
+    }
+  }
+
+  // ====================================================================
+  // 【優先度3】Google Chat Webhook通知
+  //   メールより遅延の影響は小さい。失敗時もログのみで応答に影響させない
+  // ====================================================================
+  try {
+    notifyGoogleChat(studentName, actionType, now, studyMs);
+  } catch (e) {
+    console.error('[優先度3] Webhook処理で例外:', e);
+  }
+
+  return responseMessage;
 }
 
 // ====================================================================
@@ -560,28 +580,28 @@ function createDraftsByIds(idsString) {
       return;
     }
 
-    // 送信先：保護者メアドを優先。なければ生徒メアド
-    const to = profile.parentEmail || profile.studentEmail;
+    // 送信先：必ず生徒メアド（B列）。保護者には送らない。
+    const to = profile.studentEmail;
     if (!to || to.indexOf('@') < 0) {
-      errorList.push(`✗ ${id} (${profile.name})：メアド未設定`);
+      errorList.push(`✗ ${id} (${profile.name})：生徒メアド(B列)が未設定`);
       return;
     }
 
     const url = STUDENT_DASHBOARD_BASE_URL + encodeURIComponent(profile.token);
-    const subject = `【SSS Education】${profile.name}さんの学習ダッシュボードのご案内`;
+    const subject = `【SSS Education】${profile.name}さん専用 学習ダッシュボードのご案内`;
     const body =
-      `${profile.name} さんの保護者様\n\n` +
-      `いつもSSS Educationをご利用いただき、ありがとうございます。\n` +
-      `お子様の学習状況をいつでも確認できる、専用ダッシュボードをご用意いたしました。\n\n` +
-      `▼ マイページURL\n${url}\n\n` +
-      `※ このURLは個人専用です。第三者と共有しないようご注意ください。\n` +
-      `※ スマホ・タブレットの場合、ホーム画面に追加するとアプリのように使えます。\n\n` +
-      `【ダッシュボードでできること】\n` +
-      `・自習室の入退室履歴の確認\n` +
+      `${profile.name} さん\n\n` +
+      `いつもSSS Educationでの学習、お疲れさまです。\n` +
+      `あなた専用の学習ダッシュボードをご用意しました。\n\n` +
+      `▼ あなたのマイページURL\n${url}\n\n` +
+      `※ このURLはあなた個人専用です。他の方には共有しないようご注意ください。\n` +
+      `※ スマートフォンの場合、ホーム画面に追加すると、アプリのように使えます。\n\n` +
+      `【マイページでできること】\n` +
+      `・自分の自習室入退室履歴の確認\n` +
       `・週間/月間の学習時間グラフ\n` +
       `・小テストの進捗状況\n` +
-      `・受付用QRコードの表示\n\n` +
-      `ご不明な点がございましたら、お気軽にお問い合わせください。\n\n` +
+      `・受付用のQRコード（毎回これをかざせばOK）\n\n` +
+      `不明な点があれば、講師までお気軽にお声がけください。\n\n` +
       `──────────────────\n` +
       `SSS Education\n` +
       `──────────────────\n`;
