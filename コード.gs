@@ -17,6 +17,19 @@ const IDX_PROFILE = {
 const IDX_PERSONAL = IDX_PROFILE;
 
 // ====================================================================
+// 🔔 Google Chat Webhook URL
+//   入退室通知用。WebhookのURLは秘密情報なのでGAS内のみで保管する
+//   （リポジトリには絶対にアップロードしないこと）
+// ====================================================================
+const GCHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAQAUHWNd34/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=YEAO0z4xaLIh9y2bvuVsQqHR0ncqPk0ZdTu-nB3KOcg';
+
+// ====================================================================
+// 🔗 生徒マイページのベースURL
+//   本番URLが変わったらここだけ書き換えればOK
+// ====================================================================
+const STUDENT_DASHBOARD_BASE_URL = 'https://ahmadtanzeel.github.io/-dev-webpages-/dashboard.html?token=';
+
+// ====================================================================
 // 管理シート（打刻ログ）の列インデックス
 // A列:日付 / B列:ID / D列:入室時刻 / E列:退室時刻 / F列:エール数
 // ====================================================================
@@ -328,20 +341,34 @@ function processScan(studentId) {
   const now = new Date();
   const todayStr = Utilities.formatDate(now, "JST", "yyyy/MM/dd");
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 1) return "エラー：シートが空です";
+  const sheetMaxRow = sheet.getLastRow();
 
-  // ★ 直近100件だけを後ろから取得（typically 1日以内の打刻）
+  // ★ 「B列(ID)に実データがある最終行」を求める
+  //    F列などに数式が入っていて getLastRow() が水増しされていても
+  //    実データの末尾を正確に把握できる。
+  let actualLastDataRow = 1; // ヘッダー行のみの状態
+  if (sheetMaxRow >= 2) {
+    const bColumn = sheet.getRange(2, 2, sheetMaxRow - 1, 1).getValues();
+    for (let i = bColumn.length - 1; i >= 0; i--) {
+      const v = bColumn[i][0];
+      if (v !== "" && v !== null && v !== undefined) {
+        actualLastDataRow = i + 2; // bColumn の i=0 はシートの2行目
+        break;
+      }
+    }
+  }
+
+  // ★ 直近100件だけを後ろから取得（actualLastDataRow基準）
   // 100件で見つからなければ300件、900件と段階的に拡張する保険つき
   let existingRowIndex = -1;
   let existingInTime = null;  // 退室時にメールへ含める「本日の学習時間」計算用
-  let searchSize = Math.min(100, lastRow - 1);
+  let searchSize = Math.min(100, Math.max(0, actualLastDataRow - 1));
   let attempt = 0;
   let maxAttempts = 3; // 100, 300, 900 件まで遡る
 
   while (existingRowIndex === -1 && attempt < maxAttempts && searchSize > 0) {
-    let startRow = Math.max(2, lastRow - searchSize + 1);
-    let numRows = lastRow - startRow + 1;
+    let startRow = Math.max(2, actualLastDataRow - searchSize + 1);
+    let numRows = actualLastDataRow - startRow + 1;
     if (numRows <= 0) break;
 
     // A〜E列のみ取得（F列のエール数は不要）
@@ -374,9 +401,12 @@ function processScan(studentId) {
       if (studyMs < 0) studyMs = 0;
     }
   } else {
-    // 入室処理（最終行の次に追記）
-    const targetRow = lastRow + 1;
-    sheet.getRange(targetRow, 1, 1, 4).setValues([[now, cleanTargetId, "", now]]);
+    // ★ 入室処理：実データ最終行の直下に追記
+    //    (getLastRow() ではなく actualLastDataRow を使うのがポイント)
+    //    C列に自動フォーミュラ等が入っている可能性があるため、C列は絶対に触らない
+    const targetRow = actualLastDataRow + 1;
+    sheet.getRange(targetRow, 1, 1, 2).setValues([[now, cleanTargetId]]); // A列とB列を一括
+    sheet.getRange(targetRow, 4).setValue(now);                            // D列のみ
     actionType = "入室";
   }
 
@@ -404,6 +434,9 @@ function processScan(studentId) {
   if (parentEmail) {
     notifyParent(studentName, parentEmail, actionType, now, studyMs);
   }
+
+  // 💬 Google Chatに通知（管理者向け：全員の入退室をチャットで把握）
+  notifyGoogleChat(studentName, actionType, now, studyMs);
 
   if (studentToken) CacheService.getScriptCache().remove(studentToken);
 
@@ -447,6 +480,138 @@ function notifyParent(studentName, parentEmail, actionType, datetime, studyMs) {
   } catch (err) {
     console.error(`保護者メール送信失敗 (${parentEmail}):`, err);
   }
+}
+
+// ====================================================================
+// ④-3 Google Chat通知（Webhook経由）
+// ====================================================================
+function notifyGoogleChat(studentName, actionType, datetime, studyMs) {
+  if (!GCHAT_WEBHOOK_URL) return;
+
+  const timeStr = Utilities.formatDate(datetime, "JST", "HH:mm");
+  let message;
+
+  if (actionType === "入室") {
+    message = `🟢 *${studentName}* さんが入室しました（${timeStr}）`;
+  } else if (actionType === "退室") {
+    const studyTime = studyMs > 0 ? formatTime(studyMs) : "—";
+    message = `🔴 *${studentName}* さんが退室しました（${timeStr} / 学習時間: ${studyTime}）`;
+  } else {
+    message = `${studentName} さんが${actionType}しました（${timeStr}）`;
+  }
+
+  try {
+    UrlFetchApp.fetch(GCHAT_WEBHOOK_URL, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({ text: message }),
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    console.error('Google Chat通知失敗:', err);
+  }
+}
+
+// ====================================================================
+// ⑥ 生徒マイページURLのメール下書き一括作成
+//    管理者向けUI（draftDialog.html）から呼ばれる
+// ====================================================================
+function createDraftsByIds(idsString) {
+  if (!idsString || !String(idsString).trim()) {
+    return { success: false, message: "⚠ IDが入力されていません" };
+  }
+
+  const ids = String(idsString)
+    .split(/[,、\s]+/)              // カンマ/読点/空白すべてに対応
+    .map(s => s.trim())
+    .filter(s => s);
+
+  if (ids.length === 0) {
+    return { success: false, message: "⚠ 有効なIDがありません" };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const profileData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
+
+  // ID → プロフィール情報のマップを構築
+  const profileMap = {};
+  for (let i = 1; i < profileData.length; i++) {
+    const id = String(profileData[i][IDX_PROFILE.ID]).trim();
+    if (!id) continue;
+    profileMap[id] = {
+      name:         profileData[i][IDX_PROFILE.NAME] || profileData[i][IDX_PROFILE.NICKNAME] || id,
+      parentEmail:  String(profileData[i][IDX_PROFILE.PARENT_EMAIL] || '').trim(),
+      studentEmail: String(profileData[i][IDX_PROFILE.STUDENT_EMAIL] || '').trim(),
+      token:        String(profileData[i][IDX_PROFILE.TOKEN] || '').trim()
+    };
+  }
+
+  let successList = [];
+  let errorList = [];
+
+  ids.forEach(id => {
+    const profile = profileMap[id];
+    if (!profile) {
+      errorList.push(`✗ ${id}：プロフィールが見つかりません`);
+      return;
+    }
+    if (!profile.token) {
+      errorList.push(`✗ ${id} (${profile.name})：URLトークン未設定`);
+      return;
+    }
+
+    // 送信先：保護者メアドを優先。なければ生徒メアド
+    const to = profile.parentEmail || profile.studentEmail;
+    if (!to || to.indexOf('@') < 0) {
+      errorList.push(`✗ ${id} (${profile.name})：メアド未設定`);
+      return;
+    }
+
+    const url = STUDENT_DASHBOARD_BASE_URL + encodeURIComponent(profile.token);
+    const subject = `【SSS Education】${profile.name}さんの学習ダッシュボードのご案内`;
+    const body =
+      `${profile.name} さんの保護者様\n\n` +
+      `いつもSSS Educationをご利用いただき、ありがとうございます。\n` +
+      `お子様の学習状況をいつでも確認できる、専用ダッシュボードをご用意いたしました。\n\n` +
+      `▼ マイページURL\n${url}\n\n` +
+      `※ このURLは個人専用です。第三者と共有しないようご注意ください。\n` +
+      `※ スマホ・タブレットの場合、ホーム画面に追加するとアプリのように使えます。\n\n` +
+      `【ダッシュボードでできること】\n` +
+      `・自習室の入退室履歴の確認\n` +
+      `・週間/月間の学習時間グラフ\n` +
+      `・小テストの進捗状況\n` +
+      `・受付用QRコードの表示\n\n` +
+      `ご不明な点がございましたら、お気軽にお問い合わせください。\n\n` +
+      `──────────────────\n` +
+      `SSS Education\n` +
+      `──────────────────\n`;
+
+    try {
+      GmailApp.createDraft(to, subject, body);
+      successList.push(`✓ ${profile.name} (${id}) → ${to}`);
+    } catch (e) {
+      errorList.push(`✗ ${id} (${profile.name})：下書き作成失敗 - ${e.message}`);
+    }
+  });
+
+  let message = '';
+  if (successList.length > 0) {
+    message += `✅ ${successList.length}件の下書きを作成しました\n\n`;
+    message += successList.join('\n');
+  }
+  if (errorList.length > 0) {
+    if (message) message += '\n\n';
+    message += `⚠ ${errorList.length}件のエラー\n\n`;
+    message += errorList.join('\n');
+  }
+  if (successList.length > 0) {
+    message += `\n\n👉 Gmailの「下書き」フォルダで内容を確認してから送信してください。`;
+  }
+
+  return {
+    success: successList.length > 0,
+    message: message
+  };
 }
 
 // ====================================================================
@@ -598,7 +763,7 @@ function debugProfileColumns() {
 //    test@example.com の部分を自分のメアドに変更して実行
 // ====================================================================
 function testEmailSend() {
-  const testEmail = 'Ahmadtanzeel0204@gmail.com';  // ★自分のメアドに変更
+  const testEmail = 'test@example.com';  // ★自分のメアドに変更
   notifyParent('テスト 太郎', testEmail, '退室', new Date(), 3 * 3600000 + 25 * 60000);
   console.log(`テストメールを ${testEmail} に送信しました`);
 }
