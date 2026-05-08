@@ -598,7 +598,7 @@ function debugProfileColumns() {
 //    test@example.com の部分を自分のメアドに変更して実行
 // ====================================================================
 function testEmailSend() {
-  const testEmail = 'test@example.com';  // ★自分のメアドに変更
+  const testEmail = 'Ahmadtanzeel0204@gmail.com';  // ★自分のメアドに変更
   notifyParent('テスト 太郎', testEmail, '退室', new Date(), 3 * 3600000 + 25 * 60000);
   console.log(`テストメールを ${testEmail} に送信しました`);
 }
