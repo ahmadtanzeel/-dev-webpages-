@@ -1,18 +1,18 @@
 // ====================================================================
 // 【列構成 最新版】インデックス定義（公開プロフィール / 個人情報マスタ共通）
-// A:ID / B:氏名 / C:ニックネーム / D:生徒メアド / E:保護者メアド
+// A:ID / B:生徒メアド / C:保護者メアド / D:氏名 / E:ニックネーム
 // F:目標時間 / G:URLトークン / H:模試名 / I:模試日
 // ====================================================================
 const IDX_PROFILE = {
   ID: 0,             // A列
-  NAME: 1,           // B列
-  NICKNAME: 2,       // C列
-  STUDENT_EMAIL: 3,  // D列 ★新規
-  PARENT_EMAIL: 4,   // E列 ★新規
-  GOAL_HOURS: 5,     // F列（旧D列）
-  TOKEN: 6,          // G列（旧E列）
-  EXAM_NAME: 7,      // H列（旧F列）
-  EXAM_DATE: 8       // I列（旧G列）
+  STUDENT_EMAIL: 1,  // B列
+  PARENT_EMAIL: 2,   // C列
+  NAME: 3,           // D列
+  NICKNAME: 4,       // E列
+  GOAL_HOURS: 5,     // F列
+  TOKEN: 6,          // G列
+  EXAM_NAME: 7,      // H列
+  EXAM_DATE: 8       // I列
 };
 const IDX_PERSONAL = IDX_PROFILE;
 
