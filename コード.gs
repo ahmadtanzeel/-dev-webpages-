@@ -21,7 +21,7 @@ const IDX_PERSONAL = IDX_PROFILE;
 //   入退室通知用。WebhookのURLは秘密情報なのでGAS内のみで保管する
 //   （リポジトリには絶対にアップロードしないこと）
 // ====================================================================
-const GCHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAAA0vJlI2Y/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=PjGIcj6aaedMRZxcCAQK4pY3wVmIZpO3uLBAe0sHDbU';
+const GCHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAAA0vJlI2Y/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=f-kzFXpztI6sKpwumPo2aiG_QyTPIKR1_qGgDfHFSjo';
 
 // ====================================================================
 // 🔗 生徒マイページのベースURL
@@ -243,7 +243,14 @@ function getStudentStats(studentToken) {
   let testProgress = [];
   try {
     const testSs = SpreadsheetApp.openById(TEST_SS_ID);
-    const testSheet = testSs.getSheetByName(targetId);
+
+    // ★ シート名は「生徒名」で検索する（旧仕様: 学習者IDで検索）
+    //    フォールバック：生徒名で見つからなければ、学習者IDでも検索（移行期の互換性確保）
+    let testSheet = testSs.getSheetByName(targetNickname);
+    if (!testSheet) {
+      testSheet = testSs.getSheetByName(targetId);  // 旧形式へのフォールバック
+    }
+
     if (testSheet) {
       const testData = testSheet.getDataRange().getValues();
       for (let i = 1; i < testData.length; i++) {
