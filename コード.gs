@@ -21,13 +21,22 @@ const IDX_PERSONAL = IDX_PROFILE;
 //   入退室通知用。WebhookのURLは秘密情報なのでGAS内のみで保管する
 //   （リポジトリには絶対にアップロードしないこと）
 // ====================================================================
-const GCHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAAA0vJlI2Y/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=f-kzFXpztI6sKpwumPo2aiG_QyTPIKR1_qGgDfHFSjo';
+const GCHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAQAUHWNd34/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=YEAO0z4xaLIh9y2bvuVsQqHR0ncqPk0ZdTu-nB3KOcg';
 
 // ====================================================================
 // 🔗 生徒マイページのベースURL
 //   本番URLが変わったらここだけ書き換えればOK
 // ====================================================================
 const STUDENT_DASHBOARD_BASE_URL = 'https://ahmadtanzeel.github.io/-dev-webpages-/dashboard.html?token=';
+
+// ====================================================================
+// 📘 小テスト用スプレッドシートの設定
+//   - TEST_SS_ID         : 小テスト管理用スプレッドシートのID
+//   - TEST_TEMPLATE_NAME : テンプレートシートの名称
+//   生徒名のシートが存在しない場合、このテンプレートをコピーして自動生成する
+// ====================================================================
+const TEST_SS_ID = '1uKXnpKeGCuyPpRAryFP7Ou4K4t3SgTNksZFQAhvj45E';
+const TEST_TEMPLATE_NAME = 'テンプレート';
 
 // ====================================================================
 // 管理シート（打刻ログ）の列インデックス
@@ -239,36 +248,10 @@ function getStudentStats(studentToken) {
     .sort((a, b) => parseFloat(b.hours) - parseFloat(a.hours))
     .slice(0, 5);
 
-  const TEST_SS_ID = '1uKXnpKeGCuyPpRAryFP7Ou4K4t3SgTNksZFQAhvj45E';
-  let testProgress = [];
-  try {
-    const testSs = SpreadsheetApp.openById(TEST_SS_ID);
-
-    // ★ シート名は「生徒名」で検索する（旧仕様: 学習者IDで検索）
-    //    フォールバック：生徒名で見つからなければ、学習者IDでも検索（移行期の互換性確保）
-    let testSheet = testSs.getSheetByName(targetNickname);
-    if (!testSheet) {
-      testSheet = testSs.getSheetByName(targetId);  // 旧形式へのフォールバック
-    }
-
-    if (testSheet) {
-      const testData = testSheet.getDataRange().getValues();
-      for (let i = 1; i < testData.length; i++) {
-        let bookName = testData[i][0];
-        if (!bookName) continue;
-        let totalCount = 0, completedCount = 0, blocks = [];
-        for (let j = 1; j <= 30; j++) {
-          let cellValue = testData[i][j];
-          if (cellValue === true || cellValue === false) {
-            totalCount++;
-            if (cellValue === true) { completedCount++; blocks.push(true); }
-            else { blocks.push(false); }
-          }
-        }
-        if (totalCount > 0) testProgress.push({ name: bookName, total: totalCount, completed: completedCount, blocks: blocks });
-      }
-    }
-  } catch (e) { console.error("小テスト取得失敗:", e.message); }
+  // ====================================================================
+  // 小テスト進捗の取得（シートが無ければテンプレートから自動生成）
+  // ====================================================================
+  const testProgress = getOrCreateTestProgress(targetNickname, targetId);
 
   const formatChartData = (map) => {
     let labels = Object.keys(map).sort();
@@ -642,6 +625,90 @@ function createDraftsByIds(idsString) {
 }
 
 // ====================================================================
+// ⑦ 小テスト進捗の取得（シートが無ければテンプレートから自動生成）
+//    優先順：①生徒名のシート → ②学習者IDのシート（旧形式互換）
+//    どちらも無ければ → テンプレートをコピーして生徒名のシートを新規作成
+// ====================================================================
+function getOrCreateTestProgress(studentName, studentId) {
+  const testProgress = [];
+
+  try {
+    const testSs = SpreadsheetApp.openById(TEST_SS_ID);
+
+    // 【ステップ1】既存シートを探す
+    let testSheet = testSs.getSheetByName(studentName);
+    if (!testSheet) {
+      testSheet = testSs.getSheetByName(studentId); // 旧形式（学習者ID）の互換
+    }
+
+    // 【ステップ2】どちらも無ければテンプレートから自動生成
+    if (!testSheet) {
+      const templateSheet = testSs.getSheetByName(TEST_TEMPLATE_NAME);
+      if (!templateSheet) {
+        console.error(`テンプレートシート「${TEST_TEMPLATE_NAME}」が見つかりません`);
+        return testProgress; // 空配列を返す
+      }
+
+      // 同時アクセスでの競合を防ぐためロック取得（最大10秒待機）
+      const lock = LockService.getScriptLock();
+      const acquired = lock.tryLock(10000);
+      if (!acquired) {
+        console.warn('LockService取得失敗。シート自動生成をスキップします。');
+        return testProgress;
+      }
+
+      try {
+        // ロック取得後、再度シート存在を確認（他リクエストが先に作成済の可能性）
+        testSheet = testSs.getSheetByName(studentName);
+        if (!testSheet) {
+          // テンプレートをコピーして生徒名にリネーム
+          const copied = templateSheet.copyTo(testSs);
+          copied.setName(studentName);
+          testSheet = copied;
+          console.log(`新規シート作成: ${studentName}`);
+        }
+      } catch (copyErr) {
+        console.error('シート作成失敗:', copyErr.message);
+        return testProgress;
+      } finally {
+        lock.releaseLock();
+      }
+    }
+
+    // 【ステップ3】シートからデータを抽出
+    if (testSheet) {
+      const testData = testSheet.getDataRange().getValues();
+      for (let i = 1; i < testData.length; i++) {
+        const bookName = testData[i][0];
+        if (!bookName) continue;
+        let totalCount = 0, completedCount = 0;
+        const blocks = [];
+        for (let j = 1; j <= 30; j++) {
+          const cellValue = testData[i][j];
+          if (cellValue === true || cellValue === false) {
+            totalCount++;
+            if (cellValue === true) { completedCount++; blocks.push(true); }
+            else { blocks.push(false); }
+          }
+        }
+        if (totalCount > 0) {
+          testProgress.push({
+            name: bookName,
+            total: totalCount,
+            completed: completedCount,
+            blocks: blocks
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("小テスト取得失敗:", e.message);
+  }
+
+  return testProgress;
+}
+
+// ====================================================================
 // 補助関数群
 // ====================================================================
 function formatTime(ms) { return `${Math.floor(ms/3600000)}時間${Math.floor((ms%3600000)/60000)}分`; }
@@ -793,4 +860,27 @@ function testEmailSend() {
   const testEmail = 'test@example.com';  // ★自分のメアドに変更
   notifyParent('テスト 太郎', testEmail, '退室', new Date(), 3 * 3600000 + 25 * 60000);
   console.log(`テストメールを ${testEmail} に送信しました`);
+}
+
+// ====================================================================
+// 🔧 デバッグ用：小テストシート自動生成のテスト
+//   実在しない名前で getOrCreateTestProgress を呼び、テンプレートから
+//   新規シートが作られることを確認する
+// ====================================================================
+function testCreateTestSheet() {
+  const testName = 'テスト用_' + Utilities.formatDate(new Date(), 'JST', 'MMddHHmm');
+  console.log(`テスト名「${testName}」でシート生成を試行します...`);
+
+  const result = getOrCreateTestProgress(testName, 'TEST_ID_999');
+  console.log('取得結果:', JSON.stringify(result, null, 2));
+
+  // 生成確認
+  const testSs = SpreadsheetApp.openById(TEST_SS_ID);
+  const newSheet = testSs.getSheetByName(testName);
+  if (newSheet) {
+    console.log(`✓ シート「${testName}」が正常に作成されました（行数: ${newSheet.getLastRow()}）`);
+    console.log('  → 動作確認後、不要なら手動で削除してください');
+  } else {
+    console.log(`✗ シートが作成されませんでした。テンプレート「${TEST_TEMPLATE_NAME}」が存在するか確認してください`);
+  }
 }
