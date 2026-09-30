@@ -20,12 +20,12 @@ const IDX_PERSONAL = IDX_PROFILE;
 // ====================================================================
 // 🔔 Google Chat Webhook URL
 // ====================================================================
-const GCHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAQAUHWNd34/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=YEAO0z4xaLIh9y2bvuVsQqHR0ncqPk0ZdTu-nB3KOcg';
+const GCHAT_WEBHOOK_URL = PropertiesService.getScriptProperties().getProperty('GCHAT_WEBHOOK_URL');
 
 // ====================================================================
 // 🔗 生徒マイページのベースURL
 // ====================================================================
-const STUDENT_DASHBOARD_BASE_URL = 'https://ahmadtanzeel.github.io/-dev-webpages-/dashboard.html?token=';
+const STUDENT_DASHBOARD_BASE_URL = PropertiesService.getScriptProperties().getProperty('STUDENT_DASHBOARD_BASE_URL');
 
 // ====================================================================
 // 📘 小テスト用スプレッドシートの設定
