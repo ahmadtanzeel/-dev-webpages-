@@ -30,7 +30,7 @@ const STUDENT_DASHBOARD_BASE_URL = PropertiesService.getScriptProperties().getPr
 // ====================================================================
 // 📘 小テスト用スプレッドシートの設定
 // ====================================================================
-const TEST_SS_ID = '1uKXnpKeGCuyPpRAryFP7Ou4K4t3SgTNksZFQAhvj45E';
+const TEST_SS_ID = PropertiesService.getScriptProperties().getProperty('TEST_SS_ID');
 const TEST_TEMPLATE_NAME = 'テンプレート';
 
 // ====================================================================
@@ -57,7 +57,7 @@ const BOOK_REACTIONS_HEADERS = ['投稿ID', '生徒ID', '絵文字', '日時'];
 // カレンダー取得用シート（列定義は IDX_PROFILE に一本化）
 // ====================================================================
 const CALENDAR_CONFIG = {
-  SPREADSHEET_ID: '1HWZDOIJaQB0S3K4a9hXomJZFqmdznmKywQ2Sc_ON1Fo',
+  SPREADSHEET_ID: PropertiesService.getScriptProperties().getProperty('CALENDAR_SPREADSHEET_ID'),
   SHEET_PROFILE: '公開プロフィール',
 };
 
