@@ -130,8 +130,8 @@ function doPost(e) {
       return jsonResponse({ ok: true, message: msg });
     }
     if (action === 'scan') {
-      const msg = processScan(body.id);
-      return jsonResponse({ ok: true, message: msg });
+      // 受付打刻は { ok, code, message } をそのまま返す（失敗時は ok:false）
+      return jsonResponse(processScan(body.id, body.kioskKey, body.requestId));
     }
     // 📚 参考書おすすめ投稿
     if (action === 'postBook') {
@@ -674,12 +674,129 @@ function saveStudentSettings(token, examName, examDate) {
 // ====================================================================
 // ④ 受付打刻処理
 // ====================================================================
-function processScan(studentId) {
-  if (!studentId) return "エラー：IDが読み込めませんでした";
-  const cleanTargetId = String(studentId).trim();
+// 同じ生徒の打刻を無視する間隔（ミリ秒）。直前の成功打刻からこの時間内は状態を切り替えない
+const SCAN_DUPLICATE_GUARD_MS = 5000;
+// 打刻処理の順番待ちの最大時間（ミリ秒）。5秒ガードとは別物
+const SCAN_LOCK_WAIT_MS = 10000;
+// 同じ requestId の再送を同じ結果で返す期間（秒）
+const SCAN_REQUEST_CACHE_SEC = 600;
+
+/**
+ * 受付端末の確認。スクリプトプロパティ KIOSK_KEY と一致するキーを持つ端末だけが打刻できる。
+ * KIOSK_KEY が未設定の場合は、安全側に倒して全て拒否する。
+ */
+function checkKioskKey(kioskKey) {
+  const expected = PropertiesService.getScriptProperties().getProperty('KIOSK_KEY');
+  if (!expected) return 'KIOSK_NOT_CONFIGURED';
+  const given = String(kioskKey || '');
+  // 長さが違えば不一致。同じ長さなら全文字を比べる（比較時間で中身を推測されにくくする）
+  if (given.length !== expected.length) return 'KIOSK_UNAUTHORIZED';
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ given.charCodeAt(i);
+  return diff === 0 ? null : 'KIOSK_UNAUTHORIZED';
+}
+
+function scanResult(ok, code, message) {
+  return { ok: ok, code: code, message: message, error: ok ? undefined : message };
+}
+
+/**
+ * 受付打刻の入口。
+ * 1. 受付キー確認 → 2. 生徒IDが名簿にあるか確認 → 3. ロックを取って打刻
+ * → 4. ロック解放後に通知。いずれかで失敗した場合はシート・通知・キャッシュを変えない。
+ */
+function processScan(studentId, kioskKey, requestId) {
+  const kioskError = checkKioskKey(kioskKey);
+  if (kioskError === 'KIOSK_NOT_CONFIGURED') {
+    return scanResult(false, kioskError, 'サーバー側で受付キーが設定されていません。管理者に連絡してください');
+  }
+  if (kioskError) {
+    return scanResult(false, kioskError, '受付キーが正しくありません');
+  }
+
+  const cleanTargetId = String(studentId || '').trim();
+  if (!cleanTargetId) return scanResult(false, 'EMPTY_ID', 'IDが読み込めませんでした');
+  if (cleanTargetId.length > 64) return scanResult(false, 'UNKNOWN_ID', '登録されていないIDです');
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 生徒名簿の確認（シートを書き換える前に行う）
+  const pData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
+  let profile = null;
+  for (let i = 1; i < pData.length; i++) {
+    if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) {
+      const rawParentEmail = pData[i][IDX_PROFILE.PARENT_EMAIL];
+      profile = {
+        name: pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者",
+        token: String(pData[i][IDX_PROFILE.TOKEN] || '').trim() || null,
+        parentEmail: (rawParentEmail && String(rawParentEmail).indexOf('@') > 0) ? String(rawParentEmail).trim() : null
+      };
+      break;
+    }
+  }
+  if (!profile) return scanResult(false, 'UNKNOWN_ID', '登録されていないIDです');
+
+  const cache = CacheService.getScriptCache();
+  const reqKey = requestId ? 'scanreq_' + String(requestId).slice(0, 80) : null;
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(SCAN_LOCK_WAIT_MS)) {
+    return scanResult(false, 'BUSY', '混み合っています。もう一度かざしてください');
+  }
+
+  let record;
+  try {
+    // 同じリクエストの再送なら、前回の結果をそのまま返す（通知もしない）
+    if (reqKey) {
+      const prev = cache.get(reqKey);
+      if (prev) {
+        const p = JSON.parse(prev);
+        return scanResult(true, 'ALREADY_PROCESSED', p.message);
+      }
+    }
+
+    record = writeScanRecord(ss, cleanTargetId, new Date());
+    if (record.duplicate) {
+      return scanResult(true, 'DUPLICATE', `${profile.name} さんは直前に打刻済みです`);
+    }
+
+    // 打刻結果を確定させてからロックを外す
+    SpreadsheetApp.flush();
+    record.message = `${profile.name} さんが ${record.actionType} しました！`;
+    if (reqKey) cache.put(reqKey, JSON.stringify({ message: record.message }), SCAN_REQUEST_CACHE_SEC);
+  } catch (e) {
+    console.error('打刻処理で例外:', e);
+    return scanResult(false, 'WRITE_FAILED', '記録に失敗しました。もう一度かざしてください');
+  } finally {
+    lock.releaseLock();
+  }
+
+  // ここから先は打刻が確定した後の処理（失敗しても打刻自体は成功扱い）
+  if (profile.token) cache.remove(profile.token);
+
+  if (profile.parentEmail) {
+    try {
+      notifyParent(profile.name, profile.parentEmail, record.actionType, record.time, record.studyMs);
+    } catch (e) {
+      console.error('[優先度2] 保護者メール処理で例外:', e);
+    }
+  }
+
+  try {
+    notifyGoogleChat(profile.name, record.actionType, record.time, record.studyMs);
+  } catch (e) {
+    console.error('[優先度3] Webhook処理で例外:', e);
+  }
+
+  return scanResult(true, record.actionType === '入室' ? 'CHECK_IN' : 'CHECK_OUT', record.message);
+}
+
+/**
+ * 管理シートへの入退室の書き込み（ロック内で呼ぶこと）。
+ * 同じ生徒の直前の打刻から SCAN_DUPLICATE_GUARD_MS 以内なら何もせず duplicate:true を返す。
+ */
+function writeScanRecord(ss, cleanTargetId, now) {
   const sheet = ss.getSheetByName("管理シート");
-  const now = new Date();
   const todayStr = Utilities.formatDate(now, "JST", "yyyy/MM/dd");
 
   const sheetMaxRow = sheet.getLastRow();
@@ -698,6 +815,7 @@ function processScan(studentId) {
 
   let existingRowIndex = -1;
   let existingInTime = null;
+  let lastEventMs = null; // 本日この生徒が最後に打刻した時刻（入室・退室のどちらか新しい方）
   let searchSize = Math.min(100, Math.max(0, actualLastDataRow - 1));
   let attempt = 0;
   let maxAttempts = 3;
@@ -714,6 +832,11 @@ function processScan(studentId) {
       const rowDateStr = rowDate instanceof Date ? Utilities.formatDate(rowDate, "JST", "yyyy/MM/dd") : "";
       if (rowDateStr !== todayStr) continue;
       if (String(data[i][IDX_LOG.ID]).trim() !== cleanTargetId) continue;
+      if (lastEventMs === null) {
+        const inT = data[i][IDX_LOG.IN], outT = data[i][IDX_LOG.OUT];
+        const times = [inT, outT].filter(t => t instanceof Date).map(t => t.getTime());
+        if (times.length > 0) lastEventMs = Math.max.apply(null, times);
+      }
       if (data[i][IDX_LOG.OUT] === "" || data[i][IDX_LOG.OUT] === null) {
         existingRowIndex = startRow + i;
         existingInTime = data[i][IDX_LOG.IN];
@@ -723,6 +846,11 @@ function processScan(studentId) {
 
     attempt++;
     searchSize *= 3;
+  }
+
+  // 5秒ガード：直前の打刻から5秒未満なら、入室/退室を切り替えない
+  if (lastEventMs !== null && now.getTime() - lastEventMs < SCAN_DUPLICATE_GUARD_MS) {
+    return { duplicate: true };
   }
 
   let actionType = "";
@@ -741,42 +869,7 @@ function processScan(studentId) {
     actionType = "入室";
   }
 
-  const pData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
-  let studentName = "学習者";
-  let studentToken = null;
-  let parentEmail = null;
-
-  for (let i = 1; i < pData.length; i++) {
-    if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) {
-      studentName = pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者";
-      studentToken = String(pData[i][IDX_PROFILE.TOKEN]).trim();
-      const rawParentEmail = pData[i][IDX_PROFILE.PARENT_EMAIL];
-      if (rawParentEmail && String(rawParentEmail).indexOf('@') > 0) {
-        parentEmail = String(rawParentEmail).trim();
-      }
-      break;
-    }
-  }
-
-  const responseMessage = `${studentName} さんが ${actionType} しました！`;
-
-  if (studentToken) CacheService.getScriptCache().remove(studentToken);
-
-  if (parentEmail) {
-    try {
-      notifyParent(studentName, parentEmail, actionType, now, studyMs);
-    } catch (e) {
-      console.error('[優先度2] 保護者メール処理で例外:', e);
-    }
-  }
-
-  try {
-    notifyGoogleChat(studentName, actionType, now, studyMs);
-  } catch (e) {
-    console.error('[優先度3] Webhook処理で例外:', e);
-  }
-
-  return responseMessage;
+  return { duplicate: false, actionType: actionType, studyMs: studyMs, time: now };
 }
 
 // ====================================================================

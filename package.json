@@ -1,0 +1,7 @@
+{
+  "name": "sss-webpages",
+  "private": true,
+  "scripts": {
+    "test": "TZ=Asia/Tokyo node --test tests/*.test.js"
+  }
+}
