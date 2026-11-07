@@ -24,9 +24,21 @@ const CONFIG = {
 };
 
 // ============================================================
-// メイン関数 — 時間トリガーで5分ごとに実行
+// 【廃止】自動欠席判定メール（2026-11-07 監査レポート v2 R-02）
+// 欠席の確認は教室での確認に一本化したため、この機能は使わない。
+// 古いトリガーが残っていても送信されないよう、関数の先頭で止めている。
+// 再開する場合は運用の合意を取った上で ABSENCE_MAIL_ENABLED を true にすること。
+// ============================================================
+const ABSENCE_MAIL_ENABLED = false;
+
+// ============================================================
+// メイン関数 — （廃止前は）時間トリガーで5分ごとに実行
 // ============================================================
 function checkAbsenceAndSendMail() {
+  if (!ABSENCE_MAIL_ENABLED) {
+    console.warn('自動欠席メールは廃止済みのため送信しません。removeAbsenceTrigger() を実行してトリガーを削除してください');
+    return;
+  }
   const ss     = SpreadsheetApp.openById(CALENDAR_CONFIG.SPREADSHEET_ID);
   const today  = new Date();
   const todayStr = Utilities.formatDate(today, 'Asia/Tokyo', 'yyyy/MM/dd');
@@ -174,22 +186,27 @@ function logSent(sentSheet, todayStr, sentKey, studentId, studentName, eventStar
 }
 
 // ============================================================
-// 初回セットアップ用：時間トリガーを自動登録する関数
-// GASエディタで一度だけ手動実行してください
+// 自動欠席メールのトリガー削除（GASエディタで手動実行）
+// ※ インストール型トリガーは作成したアカウントごとに管理されるため、
+//   過去にトリガーを設定したことがある各アカウントで1回ずつ実行すること。
+//   送信済みログシートは削除しない（過去の記録として残す）。
 // ============================================================
-function setupTrigger() {
-  // 既存の同名トリガーを削除
+function removeAbsenceTrigger() {
+  let removed = 0;
   ScriptApp.getProjectTriggers().forEach(t => {
     if (t.getHandlerFunction() === 'checkAbsenceAndSendMail') {
       ScriptApp.deleteTrigger(t);
+      removed++;
     }
   });
-  // 5分ごとのトリガーを新規登録
-  ScriptApp.newTrigger('checkAbsenceAndSendMail')
-    .timeBased()
-    .everyMinutes(5)
-    .create();
-  console.log('トリガーを登録しました（5分ごと）');
+  console.log(`自動欠席メールのトリガーを ${removed} 件削除しました`);
+  return removed;
+}
+
+// 旧セットアップ関数。誤って実行してもトリガーを作らず、削除だけ行う
+function setupTrigger() {
+  console.warn('自動欠席メールは廃止済みです。トリガーは作成せず、残っているものを削除します');
+  return removeAbsenceTrigger();
 }
 
 // ============================================================
@@ -412,8 +429,18 @@ function logReminderSent(sentSheet, sentKey, studentId, name, version, weekKey, 
 // （下のコメントの「8:05にずらす」は現状コード上は未実装）。
 // 本運用に入れる際はどちらか一方だけを登録すること。
 // ============================================================
+// 使う方を 'A' か 'B' で指定する（監査レポート v2 R-04）。
+// 未指定（null）のままでは setupReminderTrigger() は何も登録しない。
+//   A：来週の予定が1件もない生徒に送る
+//   B：今週か来週のどちらかが空の生徒に送る
+const REMINDER_VERSION = null;
+
 function setupReminderTrigger() {
-  // 既存トリガーを削除
+  if (REMINDER_VERSION !== 'A' && REMINDER_VERSION !== 'B') {
+    throw new Error('REMINDER_VERSION に A か B を指定してから実行してください（両方の同時登録はしません）');
+  }
+
+  // 既存トリガー（A・B両方）を削除してから、選んだ方だけを登録する
   ScriptApp.getProjectTriggers().forEach(t => {
     const fn = t.getHandlerFunction();
     if (fn === 'sendReminderVersionA' || fn === 'sendReminderVersionB') {
@@ -421,19 +448,18 @@ function setupReminderTrigger() {
     }
   });
 
-  // Version A：毎週月曜 8:00
-  ScriptApp.newTrigger('sendReminderVersionA')
+  ScriptApp.newTrigger('sendReminderVersion' + REMINDER_VERSION)
     .timeBased()
     .onWeekDay(ScriptApp.WeekDay.MONDAY)
     .atHour(8)
     .create();
 
-  // Version B：毎週月曜 8:05（Aと少しずらす）
-  ScriptApp.newTrigger('sendReminderVersionB')
-    .timeBased()
-    .onWeekDay(ScriptApp.WeekDay.MONDAY)
-    .atHour(8)
-    .create();
+  console.log(`催促メールトリガーを登録しました（Version ${REMINDER_VERSION}・毎週月曜 8時台）`);
+}
 
-  console.log('催促メールトリガーを登録しました（毎週月曜 8:00）');
+// 現在登録されているトリガーの一覧をログに出す（停止確認用）
+function listTriggers() {
+  const list = ScriptApp.getProjectTriggers().map(t => t.getHandlerFunction());
+  console.log('このアカウントで登録中のトリガー: ' + (list.length ? list.join(', ') : '（なし）'));
+  return list;
 }
