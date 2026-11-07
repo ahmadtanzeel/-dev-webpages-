@@ -195,6 +195,24 @@ function ensureSheet(sheetName, headers) {
 }
 
 // ====================================================================
+// 🛠 ユーティリティ：自由入力の文字列をシートに安全に書くための変換
+//   先頭が = + - @（とタブ・改行）の文字列は、数式として解釈されないよう
+//   先頭に ' を付けて「文字列」として保存する（' はセルの表示・取得値には含まれない）
+// ====================================================================
+function safeCellText(value) {
+  const s = String(value === null || value === undefined ? '' : value);
+  return /^[=+\-@\t\r\n]/.test(s) ? "'" + s : s;
+}
+
+// 'yyyy-MM-dd' 形式で、実在する日付かどうか
+function isValidDateString(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+  if (!m) return false;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return d.getFullYear() === Number(m[1]) && d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3]);
+}
+
+// ====================================================================
 // ② ダッシュボード用データ集計
 // ====================================================================
 function getStudentStats(studentToken) {
@@ -572,7 +590,7 @@ function postBookPost(token, bookName, rating, comment) {
 
   const sheet = ensureSheet(SHEET_BOOK_POSTS, BOOK_POSTS_HEADERS);
   const postId = 'B' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-  sheet.appendRow([postId, new Date(), student.id, bookName, r, comment]);
+  sheet.appendRow([postId, new Date(), student.id, safeCellText(bookName), r, safeCellText(comment)]);
 
   return "投稿しました";
 }
@@ -647,9 +665,19 @@ function saveStudentSettings(token, examName, examDate) {
       break;
     }
   }
-  if (!studentId) return "認証エラー";
+  // 以前は「認証エラー」を成功扱い（ok:true）で返していたため、例外にして ok:false で返す
+  if (!studentId) throw new Error("無効なURLです。管理者に連絡してください。");
 
-  const settingsSheet = ss.getSheetByName("生徒設定");
+  examName = String(examName || '').trim();
+  examDate = String(examDate || '').trim();
+  if (!examName) throw new Error("模試名を入力してください");
+  if (examName.length > 50) throw new Error("模試名は50文字以内にしてください");
+  if (!isValidDateString(examDate)) throw new Error("模試の日付が正しくありません");
+  const examYear = Number(examDate.slice(0, 4));
+  const thisYear = new Date().getFullYear();
+  if (examYear < thisYear - 1 || examYear > thisYear + 3) throw new Error("模試の日付の年が範囲外です");
+
+  const settingsSheet = ensureSheet("生徒設定", ['生徒ID', '模試名', '模試日程']);
   const settingsData = settingsSheet.getDataRange().getValues();
   let targetRow = -1;
 
@@ -663,7 +691,7 @@ function saveStudentSettings(token, examName, examDate) {
   if (targetRow === -1) targetRow = settingsSheet.getLastRow() + 1;
 
   settingsSheet.getRange(targetRow, 1).setValue(studentId);
-  settingsSheet.getRange(targetRow, 2).setValue(examName);
+  settingsSheet.getRange(targetRow, 2).setValue(safeCellText(examName));
   settingsSheet.getRange(targetRow, 3).setValue(examDate);
 
   CacheService.getScriptCache().remove(token);
@@ -1299,16 +1327,85 @@ function addCalendarEventsForStudent(token, events) {
     throw new Error('カレンダーの取得に失敗しました');
   }
   if (!calendar) throw new Error('カレンダーが見つかりません');
-  if (!Array.isArray(events) || events.length === 0) throw new Error('予定データがありません');
 
-  let count = 0;
-  events.forEach(ev => {
-    const start = new Date(ev.date + 'T' + ev.start + ':00');
-    const end   = new Date(ev.date + 'T' + ev.end   + ':00');
-    const title = ev.memo ? `自習室 - ${ev.memo}` : '自習室';
-    calendar.createEvent(title, start, end);
-    count++;
+  // 先に全件をチェックし、1件でも不正なら何も登録しない
+  const items = validateCalendarEvents(events);
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('混み合っています。少し待ってからもう一度送信してください');
+
+  let count = 0, skipped = 0;
+  try {
+    // 同じ時間帯の「自習室」予定が既にあれば作らない（送信の二重押し・再送対策）
+    const rangeStart = new Date(Math.min.apply(null, items.map(i => i.start.getTime())));
+    const rangeEnd   = new Date(Math.max.apply(null, items.map(i => i.end.getTime())));
+    const existing = new Set(calendar.getEvents(rangeStart, rangeEnd)
+      .filter(ev => String(ev.getTitle()).indexOf('自習室') === 0)
+      .map(ev => ev.getStartTime().getTime() + '_' + ev.getEndTime().getTime()));
+
+    items.forEach(it => {
+      const key = it.start.getTime() + '_' + it.end.getTime();
+      if (existing.has(key)) { skipped++; return; }
+      calendar.createEvent(it.title, it.start, it.end);
+      existing.add(key);
+      count++;
+    });
+  } finally {
+    lock.releaseLock();
+  }
+
+  return skipped > 0
+    ? `${count}件の予定を登録しました（同じ時間の予定${skipped}件は登録済みのためスキップ）`
+    : `${count}件の予定を登録しました`;
+}
+
+// 予定登録の上限・範囲
+const CAL_MAX_EVENTS_PER_REQUEST = 31;
+const CAL_MAX_DAYS_AHEAD = 90;
+const CAL_MAX_MEMO_LENGTH = 50;
+
+/**
+ * 生徒から送られた予定の一覧をチェックし、登録用の { title, start, end } に変換する。
+ * 不正なものが1件でもあれば例外（何も登録しない）。
+ */
+function validateCalendarEvents(events) {
+  if (!Array.isArray(events) || events.length === 0) throw new Error('予定データがありません');
+  if (events.length > CAL_MAX_EVENTS_PER_REQUEST) {
+    throw new Error(`一度に登録できる予定は${CAL_MAX_EVENTS_PER_REQUEST}件までです`);
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const lastDay = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() + CAL_MAX_DAYS_AHEAD + 1);
+  const timeRe = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  const seen = new Set();
+  const items = [];
+
+  events.forEach((ev, idx) => {
+    const n = idx + 1;
+    if (!ev || typeof ev !== 'object') throw new Error(`${n}件目の予定が不正です`);
+    const date = String(ev.date || '');
+    const st = timeRe.exec(String(ev.start || ''));
+    const en = timeRe.exec(String(ev.end || ''));
+    if (!isValidDateString(date)) throw new Error(`${n}件目の日付が正しくありません`);
+    if (!st || !en) throw new Error(`${n}件目の時刻が正しくありません`);
+
+    const y = Number(date.slice(0, 4)), mo = Number(date.slice(5, 7)) - 1, d = Number(date.slice(8, 10));
+    const start = new Date(y, mo, d, Number(st[1]), Number(st[2]));
+    const end   = new Date(y, mo, d, Number(en[1]), Number(en[2]));
+    if (end <= start) throw new Error(`${n}件目：終了時刻は開始時刻より後にしてください`);
+    if (start < todayStart) throw new Error(`${n}件目：過去の日付には登録できません`);
+    if (start >= lastDay) throw new Error(`${n}件目：${CAL_MAX_DAYS_AHEAD}日より先の予定は登録できません`);
+
+    const memo = String(ev.memo || '').replace(/[\r\n\t]+/g, ' ').trim();
+    if (memo.length > CAL_MAX_MEMO_LENGTH) throw new Error(`${n}件目：メモは${CAL_MAX_MEMO_LENGTH}文字以内にしてください`);
+
+    const key = start.getTime() + '_' + end.getTime();
+    if (seen.has(key)) return; // 同じ送信内の重複は1件にまとめる
+    seen.add(key);
+
+    items.push({ title: memo ? `自習室 - ${memo}` : '自習室', start: start, end: end });
   });
 
-  return `${count}件の予定を登録しました`;
+  return items;
 }
