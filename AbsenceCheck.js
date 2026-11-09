@@ -433,7 +433,7 @@ function logReminderSent(sentSheet, sentKey, studentId, name, version, weekKey, 
 // 未指定（null）のままでは setupReminderTrigger() は何も登録しない。
 //   A：来週の予定が1件もない生徒に送る
 //   B：今週か来週のどちらかが空の生徒に送る
-const REMINDER_VERSION = null;
+const REMINDER_VERSION = 'A';
 
 function setupReminderTrigger() {
   if (REMINDER_VERSION !== 'A' && REMINDER_VERSION !== 'B') {

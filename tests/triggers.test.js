@@ -25,8 +25,8 @@ test('旧 setupTrigger を実行してもトリガーを作らない', () => {
   assert.deepEqual(env.ctx.listTriggers(), []);
 });
 
-test('REMINDER_VERSION 未指定なら催促トリガーを登録せず、既存も触らない', () => {
-  const env = createEnv({ triggers: [trig('sendReminderVersionA'), trig('sendReminderVersionB')] });
-  assert.throws(() => env.ctx.setupReminderTrigger(), /REMINDER_VERSION/);
-  assert.equal(env.ctx.listTriggers().length, 2);
+test('催促トリガーは A だけを登録する', () => {
+  const env = createEnv({ triggers: [trig('sendReminderVersionA'), trig('sendReminderVersionB'), trig('checkAbsenceAndSendMail')] });
+  env.ctx.setupReminderTrigger();
+  assert.deepEqual(env.ctx.listTriggers().sort(), ['checkAbsenceAndSendMail', 'sendReminderVersionA']);
 });
