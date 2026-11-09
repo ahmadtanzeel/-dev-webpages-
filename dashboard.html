@@ -3109,7 +3109,7 @@
   <div id="settings-modal" class="modal">
     <h3>MY GOAL SETTING</h3>
     <label class="field-label">目標模試名</label>
-    <input type="text" id="input-exam-name" class="modal-input" placeholder="例：全統共通テスト模試">
+    <input type="text" id="input-exam-name" class="modal-input" maxlength="50" placeholder="例：全統共通テスト模試">
     <label class="field-label">模試日程</label>
     <input type="date" id="input-exam-date" class="modal-input">
     <button class="modal-btn" id="save-btn">SAVE SETTINGS</button>
@@ -3140,7 +3140,7 @@
       </div>
       <div class="sse-field">
         <label class="sse-field-label" for="sse-memo">メモ（任意）</label>
-        <input type="text" id="sse-memo" placeholder="例：数学・英語の演習">
+        <input type="text" id="sse-memo" maxlength="50" placeholder="例：数学・英語の演習">
       </div>
 
       <div class="sse-divider"></div>
@@ -4389,9 +4389,9 @@
     btn.style.display = 'block';
     el.innerHTML = schedules.map((s, i) => `
       <div class="sse-item">
-        <span class="d">${fmtDisplay(s.date)}</span>
-        <span class="t">${s.start}-${s.end}</span>
-        <span class="m">${s.memo || ''}</span>
+        <span class="d">${escapeHtml(fmtDisplay(s.date))}</span>
+        <span class="t">${escapeHtml(s.start)}-${escapeHtml(s.end)}</span>
+        <span class="m">${escapeHtml(s.memo || '')}</span>
         <button class="x" data-idx="${i}" aria-label="削除">×</button>
       </div>`).join('');
   }

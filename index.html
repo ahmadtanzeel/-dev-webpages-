@@ -217,8 +217,37 @@
   const overlay  = document.getElementById('overlay');
   const container = document.getElementById('main-container');
 
+  // =====================================================================
+  // 受付キー（この端末だけに保存。サーバーのスクリプトプロパティ KIOSK_KEY と照合される）
+  // =====================================================================
+  const KIOSK_KEY_STORAGE = 'sss_kiosk_key';
+
+  function getKioskKey() {
+    try { return localStorage.getItem(KIOSK_KEY_STORAGE) || ''; } catch (e) { return ''; }
+  }
+  function setKioskKey(v) {
+    try {
+      if (v) localStorage.setItem(KIOSK_KEY_STORAGE, v);
+      else localStorage.removeItem(KIOSK_KEY_STORAGE);
+    } catch (e) {}
+  }
+  function askKioskKey() {
+    const v = window.prompt('受付キーを入力してください（管理者から渡されたもの）', '');
+    if (v && v.trim()) setKioskKey(v.trim());
+    return getKioskKey();
+  }
+
+  // 打刻ごとの一意なID（通信の再送で二重に記録されないようにする）
+  function newRequestId() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    const a = new Uint8Array(16);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
+  }
+
   // システム開始処理
   function startSystem() {
+    if (!getKioskKey()) askKioskKey();
     overlay.style.display = 'none';
     input.focus();
   }
@@ -258,14 +287,27 @@
         method: 'POST',
         redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'scan', id: id }),
+        body: JSON.stringify({ action: 'scan', id: id, kioskKey: getKioskKey(), requestId: newRequestId() }),
         signal: controller.signal
       });
       clearTimeout(timeoutId);
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      if (!json.ok) throw new Error(json.error || 'サーバーエラー');
+
+      if (!json.ok) {
+        showScanFailure(json.code, json.error || json.message || 'サーバーエラー');
+        return;
+      }
+
+      if (json.code === 'DUPLICATE') {
+        // 5秒以内の2回目：記録も通知もしていない
+        msgMain.style.color = 'var(--gold)';
+        msgMain.innerText = '打刻済み';
+        msgSub.innerText  = json.message;
+        setTimeout(() => resetUI(), 2500);
+        return;
+      }
 
       // 成功時の視覚エフェクト
       container.classList.add('success-glow');
@@ -286,6 +328,28 @@
 
       setTimeout(() => resetUI(), 4000);
     }
+  }
+
+  function showScanFailure(code, message) {
+    msgMain.style.color = '#ff4d4d';
+    if (code === 'KIOSK_UNAUTHORIZED') {
+      // キーが違う → この端末のキーを消し、次の打刻前に入れ直してもらう
+      setKioskKey('');
+      msgMain.innerText = '受付キーエラー';
+      msgSub.innerText  = '画面をタップして受付キーを入れ直してください';
+      setTimeout(() => { resetUI(); overlay.style.display = 'flex'; }, 3000);
+      return;
+    }
+    const titles = {
+      UNKNOWN_ID: '登録されていません',
+      EMPTY_ID: '読み取りエラー',
+      BUSY: '混み合っています',
+      WRITE_FAILED: '記録エラー',
+      KIOSK_NOT_CONFIGURED: '設定エラー'
+    };
+    msgMain.innerText = titles[code] || 'ERROR';
+    msgSub.innerText  = message;
+    setTimeout(() => resetUI(), 4000);
   }
 
   function resetUI(mainText = "", subText = "") {

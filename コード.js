@@ -130,8 +130,8 @@ function doPost(e) {
       return jsonResponse({ ok: true, message: msg });
     }
     if (action === 'scan') {
-      const msg = processScan(body.id);
-      return jsonResponse({ ok: true, message: msg });
+      // 受付打刻は { ok, code, message } をそのまま返す（失敗時は ok:false）
+      return jsonResponse(processScan(body.id, body.kioskKey, body.requestId));
     }
     // 📚 参考書おすすめ投稿
     if (action === 'postBook') {
@@ -192,6 +192,24 @@ function ensureSheet(sheetName, headers) {
     }
   }
   return sheet;
+}
+
+// ====================================================================
+// 🛠 ユーティリティ：自由入力の文字列をシートに安全に書くための変換
+//   先頭が = + - @（とタブ・改行）の文字列は、数式として解釈されないよう
+//   先頭に ' を付けて「文字列」として保存する（' はセルの表示・取得値には含まれない）
+// ====================================================================
+function safeCellText(value) {
+  const s = String(value === null || value === undefined ? '' : value);
+  return /^[=+\-@\t\r\n]/.test(s) ? "'" + s : s;
+}
+
+// 'yyyy-MM-dd' 形式で、実在する日付かどうか
+function isValidDateString(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+  if (!m) return false;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return d.getFullYear() === Number(m[1]) && d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3]);
 }
 
 // ====================================================================
@@ -572,7 +590,7 @@ function postBookPost(token, bookName, rating, comment) {
 
   const sheet = ensureSheet(SHEET_BOOK_POSTS, BOOK_POSTS_HEADERS);
   const postId = 'B' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-  sheet.appendRow([postId, new Date(), student.id, bookName, r, comment]);
+  sheet.appendRow([postId, new Date(), student.id, safeCellText(bookName), r, safeCellText(comment)]);
 
   return "投稿しました";
 }
@@ -647,9 +665,19 @@ function saveStudentSettings(token, examName, examDate) {
       break;
     }
   }
-  if (!studentId) return "認証エラー";
+  // 以前は「認証エラー」を成功扱い（ok:true）で返していたため、例外にして ok:false で返す
+  if (!studentId) throw new Error("無効なURLです。管理者に連絡してください。");
 
-  const settingsSheet = ss.getSheetByName("生徒設定");
+  examName = String(examName || '').trim();
+  examDate = String(examDate || '').trim();
+  if (!examName) throw new Error("模試名を入力してください");
+  if (examName.length > 50) throw new Error("模試名は50文字以内にしてください");
+  if (!isValidDateString(examDate)) throw new Error("模試の日付が正しくありません");
+  const examYear = Number(examDate.slice(0, 4));
+  const thisYear = new Date().getFullYear();
+  if (examYear < thisYear - 1 || examYear > thisYear + 3) throw new Error("模試の日付の年が範囲外です");
+
+  const settingsSheet = ensureSheet("生徒設定", ['生徒ID', '模試名', '模試日程']);
   const settingsData = settingsSheet.getDataRange().getValues();
   let targetRow = -1;
 
@@ -663,7 +691,7 @@ function saveStudentSettings(token, examName, examDate) {
   if (targetRow === -1) targetRow = settingsSheet.getLastRow() + 1;
 
   settingsSheet.getRange(targetRow, 1).setValue(studentId);
-  settingsSheet.getRange(targetRow, 2).setValue(examName);
+  settingsSheet.getRange(targetRow, 2).setValue(safeCellText(examName));
   settingsSheet.getRange(targetRow, 3).setValue(examDate);
 
   CacheService.getScriptCache().remove(token);
@@ -674,12 +702,129 @@ function saveStudentSettings(token, examName, examDate) {
 // ====================================================================
 // ④ 受付打刻処理
 // ====================================================================
-function processScan(studentId) {
-  if (!studentId) return "エラー：IDが読み込めませんでした";
-  const cleanTargetId = String(studentId).trim();
+// 同じ生徒の打刻を無視する間隔（ミリ秒）。直前の成功打刻からこの時間内は状態を切り替えない
+const SCAN_DUPLICATE_GUARD_MS = 5000;
+// 打刻処理の順番待ちの最大時間（ミリ秒）。5秒ガードとは別物
+const SCAN_LOCK_WAIT_MS = 10000;
+// 同じ requestId の再送を同じ結果で返す期間（秒）
+const SCAN_REQUEST_CACHE_SEC = 600;
+
+/**
+ * 受付端末の確認。スクリプトプロパティ KIOSK_KEY と一致するキーを持つ端末だけが打刻できる。
+ * KIOSK_KEY が未設定の場合は、安全側に倒して全て拒否する。
+ */
+function checkKioskKey(kioskKey) {
+  const expected = PropertiesService.getScriptProperties().getProperty('KIOSK_KEY');
+  if (!expected) return 'KIOSK_NOT_CONFIGURED';
+  const given = String(kioskKey || '');
+  // 長さが違えば不一致。同じ長さなら全文字を比べる（比較時間で中身を推測されにくくする）
+  if (given.length !== expected.length) return 'KIOSK_UNAUTHORIZED';
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ given.charCodeAt(i);
+  return diff === 0 ? null : 'KIOSK_UNAUTHORIZED';
+}
+
+function scanResult(ok, code, message) {
+  return { ok: ok, code: code, message: message, error: ok ? undefined : message };
+}
+
+/**
+ * 受付打刻の入口。
+ * 1. 受付キー確認 → 2. 生徒IDが名簿にあるか確認 → 3. ロックを取って打刻
+ * → 4. ロック解放後に通知。いずれかで失敗した場合はシート・通知・キャッシュを変えない。
+ */
+function processScan(studentId, kioskKey, requestId) {
+  const kioskError = checkKioskKey(kioskKey);
+  if (kioskError === 'KIOSK_NOT_CONFIGURED') {
+    return scanResult(false, kioskError, 'サーバー側で受付キーが設定されていません。管理者に連絡してください');
+  }
+  if (kioskError) {
+    return scanResult(false, kioskError, '受付キーが正しくありません');
+  }
+
+  const cleanTargetId = String(studentId || '').trim();
+  if (!cleanTargetId) return scanResult(false, 'EMPTY_ID', 'IDが読み込めませんでした');
+  if (cleanTargetId.length > 64) return scanResult(false, 'UNKNOWN_ID', '登録されていないIDです');
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 生徒名簿の確認（シートを書き換える前に行う）
+  const pData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
+  let profile = null;
+  for (let i = 1; i < pData.length; i++) {
+    if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) {
+      const rawParentEmail = pData[i][IDX_PROFILE.PARENT_EMAIL];
+      profile = {
+        name: pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者",
+        token: String(pData[i][IDX_PROFILE.TOKEN] || '').trim() || null,
+        parentEmail: (rawParentEmail && String(rawParentEmail).indexOf('@') > 0) ? String(rawParentEmail).trim() : null
+      };
+      break;
+    }
+  }
+  if (!profile) return scanResult(false, 'UNKNOWN_ID', '登録されていないIDです');
+
+  const cache = CacheService.getScriptCache();
+  const reqKey = requestId ? 'scanreq_' + String(requestId).slice(0, 80) : null;
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(SCAN_LOCK_WAIT_MS)) {
+    return scanResult(false, 'BUSY', '混み合っています。もう一度かざしてください');
+  }
+
+  let record;
+  try {
+    // 同じリクエストの再送なら、前回の結果をそのまま返す（通知もしない）
+    if (reqKey) {
+      const prev = cache.get(reqKey);
+      if (prev) {
+        const p = JSON.parse(prev);
+        return scanResult(true, 'ALREADY_PROCESSED', p.message);
+      }
+    }
+
+    record = writeScanRecord(ss, cleanTargetId, new Date());
+    if (record.duplicate) {
+      return scanResult(true, 'DUPLICATE', `${profile.name} さんは直前に打刻済みです`);
+    }
+
+    // 打刻結果を確定させてからロックを外す
+    SpreadsheetApp.flush();
+    record.message = `${profile.name} さんが ${record.actionType} しました！`;
+    if (reqKey) cache.put(reqKey, JSON.stringify({ message: record.message }), SCAN_REQUEST_CACHE_SEC);
+  } catch (e) {
+    console.error('打刻処理で例外:', e);
+    return scanResult(false, 'WRITE_FAILED', '記録に失敗しました。もう一度かざしてください');
+  } finally {
+    lock.releaseLock();
+  }
+
+  // ここから先は打刻が確定した後の処理（失敗しても打刻自体は成功扱い）
+  if (profile.token) cache.remove(profile.token);
+
+  if (profile.parentEmail) {
+    try {
+      notifyParent(profile.name, profile.parentEmail, record.actionType, record.time, record.studyMs);
+    } catch (e) {
+      console.error('[優先度2] 保護者メール処理で例外:', e);
+    }
+  }
+
+  try {
+    notifyGoogleChat(profile.name, record.actionType, record.time, record.studyMs);
+  } catch (e) {
+    console.error('[優先度3] Webhook処理で例外:', e);
+  }
+
+  return scanResult(true, record.actionType === '入室' ? 'CHECK_IN' : 'CHECK_OUT', record.message);
+}
+
+/**
+ * 管理シートへの入退室の書き込み（ロック内で呼ぶこと）。
+ * 同じ生徒の直前の打刻から SCAN_DUPLICATE_GUARD_MS 以内なら何もせず duplicate:true を返す。
+ */
+function writeScanRecord(ss, cleanTargetId, now) {
   const sheet = ss.getSheetByName("管理シート");
-  const now = new Date();
   const todayStr = Utilities.formatDate(now, "JST", "yyyy/MM/dd");
 
   const sheetMaxRow = sheet.getLastRow();
@@ -698,6 +843,7 @@ function processScan(studentId) {
 
   let existingRowIndex = -1;
   let existingInTime = null;
+  let lastEventMs = null; // 本日この生徒が最後に打刻した時刻（入室・退室のどちらか新しい方）
   let searchSize = Math.min(100, Math.max(0, actualLastDataRow - 1));
   let attempt = 0;
   let maxAttempts = 3;
@@ -714,6 +860,11 @@ function processScan(studentId) {
       const rowDateStr = rowDate instanceof Date ? Utilities.formatDate(rowDate, "JST", "yyyy/MM/dd") : "";
       if (rowDateStr !== todayStr) continue;
       if (String(data[i][IDX_LOG.ID]).trim() !== cleanTargetId) continue;
+      if (lastEventMs === null) {
+        const inT = data[i][IDX_LOG.IN], outT = data[i][IDX_LOG.OUT];
+        const times = [inT, outT].filter(t => t instanceof Date).map(t => t.getTime());
+        if (times.length > 0) lastEventMs = Math.max.apply(null, times);
+      }
       if (data[i][IDX_LOG.OUT] === "" || data[i][IDX_LOG.OUT] === null) {
         existingRowIndex = startRow + i;
         existingInTime = data[i][IDX_LOG.IN];
@@ -723,6 +874,11 @@ function processScan(studentId) {
 
     attempt++;
     searchSize *= 3;
+  }
+
+  // 5秒ガード：直前の打刻から5秒未満なら、入室/退室を切り替えない
+  if (lastEventMs !== null && now.getTime() - lastEventMs < SCAN_DUPLICATE_GUARD_MS) {
+    return { duplicate: true };
   }
 
   let actionType = "";
@@ -741,42 +897,7 @@ function processScan(studentId) {
     actionType = "入室";
   }
 
-  const pData = ss.getSheetByName('公開プロフィール').getDataRange().getValues();
-  let studentName = "学習者";
-  let studentToken = null;
-  let parentEmail = null;
-
-  for (let i = 1; i < pData.length; i++) {
-    if (String(pData[i][IDX_PROFILE.ID]).trim() === cleanTargetId) {
-      studentName = pData[i][IDX_PROFILE.NAME] || pData[i][IDX_PROFILE.NICKNAME] || "学習者";
-      studentToken = String(pData[i][IDX_PROFILE.TOKEN]).trim();
-      const rawParentEmail = pData[i][IDX_PROFILE.PARENT_EMAIL];
-      if (rawParentEmail && String(rawParentEmail).indexOf('@') > 0) {
-        parentEmail = String(rawParentEmail).trim();
-      }
-      break;
-    }
-  }
-
-  const responseMessage = `${studentName} さんが ${actionType} しました！`;
-
-  if (studentToken) CacheService.getScriptCache().remove(studentToken);
-
-  if (parentEmail) {
-    try {
-      notifyParent(studentName, parentEmail, actionType, now, studyMs);
-    } catch (e) {
-      console.error('[優先度2] 保護者メール処理で例外:', e);
-    }
-  }
-
-  try {
-    notifyGoogleChat(studentName, actionType, now, studyMs);
-  } catch (e) {
-    console.error('[優先度3] Webhook処理で例外:', e);
-  }
-
-  return responseMessage;
+  return { duplicate: false, actionType: actionType, studyMs: studyMs, time: now };
 }
 
 // ====================================================================
@@ -1206,16 +1327,85 @@ function addCalendarEventsForStudent(token, events) {
     throw new Error('カレンダーの取得に失敗しました');
   }
   if (!calendar) throw new Error('カレンダーが見つかりません');
-  if (!Array.isArray(events) || events.length === 0) throw new Error('予定データがありません');
 
-  let count = 0;
-  events.forEach(ev => {
-    const start = new Date(ev.date + 'T' + ev.start + ':00');
-    const end   = new Date(ev.date + 'T' + ev.end   + ':00');
-    const title = ev.memo ? `自習室 - ${ev.memo}` : '自習室';
-    calendar.createEvent(title, start, end);
-    count++;
+  // 先に全件をチェックし、1件でも不正なら何も登録しない
+  const items = validateCalendarEvents(events);
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('混み合っています。少し待ってからもう一度送信してください');
+
+  let count = 0, skipped = 0;
+  try {
+    // 同じ時間帯の「自習室」予定が既にあれば作らない（送信の二重押し・再送対策）
+    const rangeStart = new Date(Math.min.apply(null, items.map(i => i.start.getTime())));
+    const rangeEnd   = new Date(Math.max.apply(null, items.map(i => i.end.getTime())));
+    const existing = new Set(calendar.getEvents(rangeStart, rangeEnd)
+      .filter(ev => String(ev.getTitle()).indexOf('自習室') === 0)
+      .map(ev => ev.getStartTime().getTime() + '_' + ev.getEndTime().getTime()));
+
+    items.forEach(it => {
+      const key = it.start.getTime() + '_' + it.end.getTime();
+      if (existing.has(key)) { skipped++; return; }
+      calendar.createEvent(it.title, it.start, it.end);
+      existing.add(key);
+      count++;
+    });
+  } finally {
+    lock.releaseLock();
+  }
+
+  return skipped > 0
+    ? `${count}件の予定を登録しました（同じ時間の予定${skipped}件は登録済みのためスキップ）`
+    : `${count}件の予定を登録しました`;
+}
+
+// 予定登録の上限・範囲
+const CAL_MAX_EVENTS_PER_REQUEST = 31;
+const CAL_MAX_DAYS_AHEAD = 90;
+const CAL_MAX_MEMO_LENGTH = 50;
+
+/**
+ * 生徒から送られた予定の一覧をチェックし、登録用の { title, start, end } に変換する。
+ * 不正なものが1件でもあれば例外（何も登録しない）。
+ */
+function validateCalendarEvents(events) {
+  if (!Array.isArray(events) || events.length === 0) throw new Error('予定データがありません');
+  if (events.length > CAL_MAX_EVENTS_PER_REQUEST) {
+    throw new Error(`一度に登録できる予定は${CAL_MAX_EVENTS_PER_REQUEST}件までです`);
+  }
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const lastDay = new Date(todayStart.getFullYear(), todayStart.getMonth(), todayStart.getDate() + CAL_MAX_DAYS_AHEAD + 1);
+  const timeRe = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  const seen = new Set();
+  const items = [];
+
+  events.forEach((ev, idx) => {
+    const n = idx + 1;
+    if (!ev || typeof ev !== 'object') throw new Error(`${n}件目の予定が不正です`);
+    const date = String(ev.date || '');
+    const st = timeRe.exec(String(ev.start || ''));
+    const en = timeRe.exec(String(ev.end || ''));
+    if (!isValidDateString(date)) throw new Error(`${n}件目の日付が正しくありません`);
+    if (!st || !en) throw new Error(`${n}件目の時刻が正しくありません`);
+
+    const y = Number(date.slice(0, 4)), mo = Number(date.slice(5, 7)) - 1, d = Number(date.slice(8, 10));
+    const start = new Date(y, mo, d, Number(st[1]), Number(st[2]));
+    const end   = new Date(y, mo, d, Number(en[1]), Number(en[2]));
+    if (end <= start) throw new Error(`${n}件目：終了時刻は開始時刻より後にしてください`);
+    if (start < todayStart) throw new Error(`${n}件目：過去の日付には登録できません`);
+    if (start >= lastDay) throw new Error(`${n}件目：${CAL_MAX_DAYS_AHEAD}日より先の予定は登録できません`);
+
+    const memo = String(ev.memo || '').replace(/[\r\n\t]+/g, ' ').trim();
+    if (memo.length > CAL_MAX_MEMO_LENGTH) throw new Error(`${n}件目：メモは${CAL_MAX_MEMO_LENGTH}文字以内にしてください`);
+
+    const key = start.getTime() + '_' + end.getTime();
+    if (seen.has(key)) return; // 同じ送信内の重複は1件にまとめる
+    seen.add(key);
+
+    items.push({ title: memo ? `自習室 - ${memo}` : '自習室', start: start, end: end });
   });
 
-  return `${count}件の予定を登録しました`;
+  return items;
 }

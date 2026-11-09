@@ -13,3 +13,7 @@ qrcode.min.js
 # リポジトリ用のドキュメント類
 README.md
 HANDOVER_FOR_CLAUDE_CODE.md
+
+# ローカル用テスト（GASには送らない）
+tests/**
+package.json
